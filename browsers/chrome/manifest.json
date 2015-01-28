@@ -1,0 +1,17 @@
+{
+  "manifest_version": 2,
+  "name": "Youtube Looper",
+  "version": "0.0.1",
+  "description": "AB Looping for youtube videos",
+  "permissions": [],
+  "content_scripts": [
+    {
+      "matches": ["*://*.youtube.com/watch*"],
+      "js": ["js/youtube-looper.js"],
+      "css": ["youtube-looper.css"]
+    }
+  ],
+  "web_accessible_resources": [
+    "templates/*.html"
+  ]
+}
