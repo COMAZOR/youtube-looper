@@ -3,6 +3,7 @@
                    [wilkerdev.util.macros :refer [dochan]])
   (:require [cljs.core.async :refer [chan put! <! close!] :as async]
             [cljs.core.match :refer-macros [match]]
+            [wilkerdev.util :refer [format]]
             [wilkerdev.util.dom :as dom]
             [wilkerdev.util.reactive :as r]))
 
@@ -28,6 +29,12 @@
   (when-let [ref-button (player-element video ".ytp-settings-button")]
     (dom/insert-after! button ref-button)))
 
+(defn seconds->time [seconds]
+  (let [minutes (->> (/ seconds 60)
+                     (.floor js/Math))
+        seconds (mod seconds 60)]
+    (format "%02d:%02d" minutes seconds)))
+
 (defn loop-back [video {:keys [start finish] :as loop}]
   (if loop
     (let [position (video-current-time video)]
@@ -52,8 +59,8 @@
                 (recur))))))
 
 (defn pick-loop-prompt [current]
-  (let [start (prompt-time "Which time the loop should start? (eg: 0:34)" (:start current))
-        finish (prompt-time "Which time the loop should end? (eg: 3:44)" (:finish current))]
+  (let [start (prompt-time "Which time the loop should start? (eg: 0:34)" (seconds->time (get current :start 0)))
+        finish (prompt-time "Which time the loop should end? (eg: 3:44)" (seconds->time (get current :finish 0)))]
     {:start start :finish finish}))
 
 (defn update-loop-representation [{:keys [el video]} {:keys [start finish]}]

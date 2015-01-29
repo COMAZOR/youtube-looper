@@ -1,5 +1,12 @@
 (ns wilkerdev.util
-  (:require [camel-snake-kebab.core :as csk]))
+  (:require [camel-snake-kebab.core :as csk]
+            [goog.string]
+            [goog.string.format]))
+
+(defn format
+  "Formats a string using goog.string.format."
+  [fmt & args]
+  (apply goog.string/format fmt args))
 
 (defn js->map [obj]
   (->> (js-keys obj)
