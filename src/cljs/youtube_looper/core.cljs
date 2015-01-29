@@ -76,6 +76,10 @@
              (dom/insert-after! (player-element video ".ytp-load-progress")))]
     {:el el :video video}))
 
+(defn loop-from-current-time [video]
+  {:start (video-current-time video)
+   :finish (inc (video-current-time video))})
+
 (defn init-looper [video]
   (let [loop-ref (atom nil)
         comm (chan (async/sliding-buffer 1024))
@@ -95,13 +99,25 @@
         [:time-update]
           (loop-back video @loop-ref)
         [:show-dialog]
-          (let [new-loop (pick-loop-prompt (or @loop-ref {:start (video-current-time video)
-                                                          :finish (inc (video-current-time video))}))]
+          (let [new-loop (pick-loop-prompt (or @loop-ref (loop-from-current-time video)))]
+            (put! comm [:update-loop new-loop]))
+        [:update-loop new-loop]
+          (do
             (update-loop-representation loop-bar new-loop)
             (video-seek! video (:start new-loop))
-            (reset! loop-ref new-loop))))))
+            (reset! loop-ref new-loop))
+        [:reset]
+          (put! comm [:update-loop nil])
+
+        :else (.log js/console "Got invalid message" (clj->js msg))))
+
+    comm))
 
 (defn init []
+  (dom/observe-mutation {:container dom/body
+                         :options {:childList false :characterData false}
+                         :callback (fn [& args]
+                                     (.log js/console "attributes modified on body" (clj->js args)))})
   (init-looper (dom/$ "video")))
 
 (init)

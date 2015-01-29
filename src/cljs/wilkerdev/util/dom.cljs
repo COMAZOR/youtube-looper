@@ -68,6 +68,9 @@
   (doseq [el els] (append! parent el))
   parent)
 
+(defn remove-node! [el]
+  (dom/removeNode el))
+
 (defn set-html! [el s]
   (set! (.-innerHTML el) s))
 
