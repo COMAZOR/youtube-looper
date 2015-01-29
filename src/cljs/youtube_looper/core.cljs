@@ -35,6 +35,11 @@
         seconds (mod seconds 60)]
     (format "%02d:%02d" minutes seconds)))
 
+(defn time->seconds [time]
+  (let [[_ minutes seconds] (re-find #"^(\d{1,2}):(\d{1,2}(?:\.\d+)?)$" time)]
+    (+ (* (js/parseInt minutes) 60)
+       (js/parseFloat seconds))))
+
 (defn loop-back [video {:keys [start finish] :as loop}]
   (if loop
     (let [position (video-current-time video)]
@@ -46,17 +51,9 @@
     (let [time (js/prompt message (or current ""))]
       (cond
         (nil? time) (recur)
-
-        (re-find #"^(\d{1,2}):(\d{1,2}(?:\.\d+)?)$" time)
-          (let [[_ minutes seconds] (re-find #"^(\d{1,2}):(\d{1,2}(?:\.\d+)?)$" time)]
-            (+ (* (js/parseInt minutes) 60)
-               (js/parseFloat seconds)))
-
+        (re-find #"^(\d{1,2}):(\d{1,2}(?:\.\d+)?)$" time) (time->seconds time)
         (re-find #"^\d+(?:\.\d+)?$" time) (js/parseFloat time)
-
-        :else (do
-                (js/alert "Invalid time format, try again.")
-                (recur))))))
+        :else (do (js/alert "Invalid time format, try again.") (recur))))))
 
 (defn pick-loop-prompt [current]
   (let [start (prompt-time "Which time the loop should start? (eg: 0:34)" (seconds->time (get current :start 0)))
