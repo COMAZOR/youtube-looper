@@ -43,9 +43,9 @@
         (re-find #"^(\d{1,2}):(\d{1,2}(?:\.\d+)?)$" time)
           (let [[_ minutes seconds] (re-find #"^(\d{1,2}):(\d{1,2}(?:\.\d+)?)$" time)]
             (+ (* (js/parseInt minutes) 60)
-               (js/parseInt seconds)))
+               (js/parseFloat seconds)))
 
-        (re-find #"^\d+(?:\.\d+)?$" time) (js/parseInt time)
+        (re-find #"^\d+(?:\.\d+)?$" time) (js/parseFloat time)
 
         :else (do
                 (js/alert "Invalid time format, try again.")
