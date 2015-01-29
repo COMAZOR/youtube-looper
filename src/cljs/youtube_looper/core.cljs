@@ -6,6 +6,10 @@
             [wilkerdev.util.dom :as dom]
             [wilkerdev.util.reactive :as r]))
 
+(defn video-current-time [video] (.-currentTime video))
+(defn video-duration [video] (.-duration video))
+(defn video-seek! [video time] (set! (.-currentTime video) time))
+
 (defn constantly-chan [value] (chan 1 (map (constantly value))))
 
 (defn player-element [video query]
@@ -26,9 +30,9 @@
 
 (defn loop-back [video {:keys [start finish] :as loop}]
   (if loop
-    (let [position (.-currentTime video)]
+    (let [position (video-current-time video)]
       (when (> position finish)
-        (set! (.-currentTime video) start)))))
+        (video-seek! video start)))))
 
 (defn prompt-time [message current]
   (loop []
@@ -53,7 +57,7 @@
     {:start start :finish finish}))
 
 (defn update-loop-representation [{:keys [el video]} {:keys [start finish]}]
-  (let [duration (.-duration video)
+  (let [duration (video-duration video)
         start-pct (/ start duration)
         size-pct (/ (- finish start) duration)]
     (doto el
@@ -87,7 +91,8 @@
         [:time-update]
           (loop-back video @loop-ref)
         [:show-dialog]
-          (let [new-loop (pick-loop-prompt @loop-ref)]
+          (let [new-loop (pick-loop-prompt (or @loop-ref {:start (video-current-time video)
+                                                          :end (inc (video-current-time video))}))]
             (update-loop-representation loop-bar new-loop)
             (reset! loop-ref new-loop))))))
 
