@@ -92,7 +92,7 @@
           (loop-back video @loop-ref)
         [:show-dialog]
           (let [new-loop (pick-loop-prompt (or @loop-ref {:start (video-current-time video)
-                                                          :end (inc (video-current-time video))}))]
+                                                          :finish (inc (video-current-time video))}))]
             (update-loop-representation loop-bar new-loop)
             (video-seek! video (:start new-loop))
             (reset! loop-ref new-loop))))))
