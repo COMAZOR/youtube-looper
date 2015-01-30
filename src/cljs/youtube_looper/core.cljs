@@ -8,10 +8,6 @@
             [wilkerdev.util.reactive :as r]
             [youtube-looper.youtube :as yt]))
 
-(defn video-current-time [video] (.-currentTime video))
-(defn video-duration [video] (.-duration video))
-(defn video-seek! [video time] (set! (.-currentTime video) time))
-
 (defn constantly-chan [value] (chan 1 (map (constantly value))))
 
 (defn seconds->time [seconds]
@@ -27,9 +23,9 @@
 
 (defn loop-back [video {:keys [start finish] :as loop}]
   (if loop
-    (let [position (video-current-time video)]
+    (let [position (dom/video-current-time video)]
       (when (> position finish)
-        (video-seek! video start)))))
+        (dom/video-seek! video start)))))
 
 (defn prompt-time [message current]
   (loop []
@@ -48,7 +44,7 @@
 (defn ensure-number [n] (if (js/isNaN n) 0 n))
 
 (defn update-loop-representation [{:keys [el video]} {:keys [start finish] :as loop}]
-  (let [duration (video-duration video)
+  (let [duration (dom/video-duration video)
         start-pct (/ start duration)
         size-pct (/ (- finish start) duration)]
     (doto el
@@ -64,8 +60,8 @@
     {:el el :video video}))
 
 (defn loop-from-current-time [video]
-  {:start (video-current-time video)
-   :finish (inc (video-current-time video))})
+  {:start (dom/video-current-time video)
+   :finish (inc (dom/video-current-time video))})
 
 (defn init-looper [video]
   (let [loop-ref (atom nil)
@@ -92,7 +88,7 @@
           (do
             (update-loop-representation loop-bar new-loop)
             (reset! loop-ref new-loop)
-            (if new-loop (video-seek! video (:start new-loop))))
+            (if new-loop (dom/video-seek! video (:start new-loop))))
         [:reset]
           (put! comm [:update-loop nil])
 

@@ -124,3 +124,9 @@
   ([options c]
     (observe-mutation* (merge options {:callback (fn [mutations] (put! c mutations))}))
     c))
+
+; video
+
+(defn video-current-time [video] (.-currentTime video))
+(defn video-duration [video] (.-duration video))
+(defn video-seek! [video time] (set! (.-currentTime video) time))
