@@ -49,10 +49,12 @@
   (let [loop-ref (atom nil)
         comm (chan (async/sliding-buffer 1024))
         toggle-button (yt/create-looper-button)
-        loop-bar (yt/create-loop-bar video)]
+        loop-bar (yt/create-loop-bar)
+        player-element (partial yt/player-element video)]
 
     ; ui setup
-    (yt/add-button-on-player video toggle-button)
+    (dom/insert-after! toggle-button (player-element ".ytp-settings-button"))
+    (dom/insert-after! loop-bar (player-element ".ytp-load-progress"))
 
     ; event setup
     (async/pipe (r/listen video "timeupdate" (constantly-chan [:time-update])) comm)
@@ -68,7 +70,7 @@
             (put! comm [:update-loop new-loop]))
         [:update-loop new-loop]
           (do
-            (yt/update-loop-representation loop-bar new-loop)
+            (yt/update-loop-representation loop-bar new-loop (dom/video-duration video))
             (reset! loop-ref new-loop)
             (if new-loop (dom/video-seek! video (:start new-loop))))
         [:reset]
