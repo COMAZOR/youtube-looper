@@ -105,7 +105,6 @@
             (put! comm [:update-loop new-loop]))
         [:update-loop new-loop]
           (do
-            (.log js/console "update loop" (clj->js new-loop))
             (update-loop-representation loop-bar new-loop)
             (reset! loop-ref new-loop)
             (if new-loop (video-seek! video (:start new-loop))))
@@ -139,7 +138,6 @@
     (dochan [video-id (watch-video-change)]
       (when video-id
         (if-not @looper (reset! looper (init-looper (dom/$ "video"))))
-        (.log js/console (clj->js "video changed, reseting") video-id)
         (>! @looper [:reset])))))
 
 (init)
