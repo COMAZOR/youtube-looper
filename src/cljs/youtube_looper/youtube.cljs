@@ -1,8 +1,7 @@
 (ns youtube-looper.youtube
   (:require-macros [cljs.core.async.macros :refer [go]]
                    [wilkerdev.util.macros :refer [dochan]])
-  (:require [cljs.core.async :refer [chan put! <! >! close!] :as async]
-            [cljs.core.match :refer-macros [match]]
+  (:require [cljs.core.async :refer [chan put! <! >! close!]]
             [wilkerdev.util :refer [format]]
             [wilkerdev.util.dom :as dom]
             [wilkerdev.util.reactive :as r]))
