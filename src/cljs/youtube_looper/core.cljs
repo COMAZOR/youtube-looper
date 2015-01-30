@@ -45,13 +45,17 @@
   {:start (dom/video-current-time video)
    :finish (inc (dom/video-current-time video))})
 
+(defn create-looper-action-button []
+  (yt/create-player-action-button :class "ytp-button-ytlooper"
+                                  :label "Youtube Looper"
+                                  :html "AB"))
+
 (defn init-looper [video]
   (let [loop-ref (atom nil)
         comm (chan (async/sliding-buffer 1024))
-        toggle-button (yt/create-looper-button)
-        loop-bar (yt/create-loop-bar)
+        toggle-button (create-looper-action-button)
+        loop-bar (yt/create-loop-bar "ytp-ab-looper-progress")
         player-element (partial yt/player-element video)]
-
     ; ui setup
     (dom/insert-after! toggle-button (player-element ".ytp-settings-button"))
     (dom/insert-after! loop-bar (player-element ".ytp-load-progress"))

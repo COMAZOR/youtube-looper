@@ -11,13 +11,14 @@
   (some-> (dom/ancestor video (dom/query-matcher ".html5-video-player"))
           (dom/$ query)))
 
-(defn create-looper-button []
+(defn create-player-action-button [& {:keys [class label tabindex html]
+                                      :or   {tabindex "6500"}}]
   (doto (dom/create-element! "div")
-    (dom/add-class! "ytp-button ytp-button-ytlooper")
+    (dom/add-class! (str "ytp-button " class))
     (dom/set-properties! {:role       "button"
-                          :aria-label "Youtube Looper"
-                          :tabindex   "6500"})
-    (dom/set-html! "AB")))
+                          :aria-label label
+                          :tabindex   tabindex})
+    (dom/set-html! html)))
 
 (defn ensure-number [n] (if (js/isNaN n) 0 n))
 
@@ -28,9 +29,9 @@
       (dom/set-css! "left" (str (ensure-number (* start-pct 100)) "%"))
       (dom/set-css! "transform" (str "scaleX(" (ensure-number size-pct) ")")))))
 
-(defn create-loop-bar []
+(defn create-loop-bar [class]
   (doto (dom/create-element! "div")
-    (dom/add-class! "ytp-ab-looper-progress")
+    (dom/add-class! class)
     (dom/set-css! "left" "0%")
     (dom/set-css! "transform" "scaleX(0)")))
 
