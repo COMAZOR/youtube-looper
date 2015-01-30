@@ -41,24 +41,6 @@
         finish (prompt-time "Which time the loop should end? (eg: 3:44)" (seconds->time (get current :finish 0)))]
     {:start start :finish finish}))
 
-(defn ensure-number [n] (if (js/isNaN n) 0 n))
-
-(defn update-loop-representation [{:keys [el video]} {:keys [start finish] :as loop}]
-  (let [duration (dom/video-duration video)
-        start-pct (/ start duration)
-        size-pct (/ (- finish start) duration)]
-    (doto el
-      (dom/set-css! "left" (str (ensure-number (* start-pct 100)) "%"))
-      (dom/set-css! "transform" (str "scaleX(" (ensure-number size-pct) ")")))))
-
-(defn create-loop-bar [video]
-  (let [el (doto (dom/create-element! "div")
-             (dom/add-class! "ytp-ab-looper-progress")
-             (dom/set-css! "left" "0%")
-             (dom/set-css! "transform" "scaleX(0)")
-             (dom/insert-after! (yt/player-element video ".ytp-load-progress")))]
-    {:el el :video video}))
-
 (defn loop-from-current-time [video]
   {:start (dom/video-current-time video)
    :finish (inc (dom/video-current-time video))})
@@ -67,7 +49,7 @@
   (let [loop-ref (atom nil)
         comm (chan (async/sliding-buffer 1024))
         toggle-button (yt/create-looper-button)
-        loop-bar (create-loop-bar video)]
+        loop-bar (yt/create-loop-bar video)]
 
     ; ui setup
     (yt/add-button-on-player video toggle-button)
@@ -86,7 +68,7 @@
             (put! comm [:update-loop new-loop]))
         [:update-loop new-loop]
           (do
-            (update-loop-representation loop-bar new-loop)
+            (yt/update-loop-representation loop-bar new-loop)
             (reset! loop-ref new-loop)
             (if new-loop (dom/video-seek! video (:start new-loop))))
         [:reset]
