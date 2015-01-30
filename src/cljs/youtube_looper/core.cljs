@@ -5,29 +5,14 @@
             [cljs.core.match :refer-macros [match]]
             [wilkerdev.util :refer [format]]
             [wilkerdev.util.dom :as dom]
-            [wilkerdev.util.reactive :as r]))
+            [wilkerdev.util.reactive :as r]
+            [youtube-looper.youtube :as yt]))
 
 (defn video-current-time [video] (.-currentTime video))
 (defn video-duration [video] (.-duration video))
 (defn video-seek! [video time] (set! (.-currentTime video) time))
 
 (defn constantly-chan [value] (chan 1 (map (constantly value))))
-
-(defn player-element [video query]
-  (some-> (dom/ancestor video (dom/query-matcher ".html5-video-player"))
-          (dom/$ query)))
-
-(defn create-looper-button []
-  (doto (dom/create-element! "div")
-    (dom/add-class! "ytp-button ytp-button-ytlooper")
-    (dom/set-properties! {:role       "button"
-                          :aria-label "Youtube Looper"
-                          :tabindex   "6500"})
-    (dom/set-html! "AB")))
-
-(defn add-button-on-player [video button]
-  (when-let [ref-button (player-element video ".ytp-settings-button")]
-    (dom/insert-after! button ref-button)))
 
 (defn seconds->time [seconds]
   (let [minutes (->> (/ seconds 60)
@@ -75,7 +60,7 @@
              (dom/add-class! "ytp-ab-looper-progress")
              (dom/set-css! "left" "0%")
              (dom/set-css! "transform" "scaleX(0)")
-             (dom/insert-after! (player-element video ".ytp-load-progress")))]
+             (dom/insert-after! (yt/player-element video ".ytp-load-progress")))]
     {:el el :video video}))
 
 (defn loop-from-current-time [video]
@@ -85,11 +70,11 @@
 (defn init-looper [video]
   (let [loop-ref (atom nil)
         comm (chan (async/sliding-buffer 1024))
-        toggle-button (create-looper-button)
+        toggle-button (yt/create-looper-button)
         loop-bar (create-loop-bar video)]
 
     ; ui setup
-    (add-button-on-player video toggle-button)
+    (yt/add-button-on-player video toggle-button)
 
     ; event setup
     (async/pipe (r/listen video "timeupdate" (constantly-chan [:time-update])) comm)
@@ -115,22 +100,10 @@
 
     comm))
 
-(defn item-prop [name]
-  (if-let [node (dom/$ (str "meta[itemprop=" name "]"))]
-    (.-content node)))
-
-(defn current-video-id [] (item-prop "videoId"))
-
-(defn watch-video-change []
-  (-> (dom/observe-mutation {:container dom/body
-                             :options   {:childList false :characterData false}}
-                            (chan 1024 (map (fn [_] (current-video-id)))))
-      (r/distinct)))
-
 (defn init []
   (let [looper (atom nil)]
-    (dochan [video-id (watch-video-change)]
-      (when video-id
+    (dochan [video-id (yt/watch-video-change)]
+      (when (not= video-id :yt/no-video)
         (if-not @looper (reset! looper (init-looper (dom/$ "video"))))
         (>! @looper [:reset])))))
 
