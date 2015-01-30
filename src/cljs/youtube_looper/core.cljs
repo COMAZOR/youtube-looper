@@ -122,16 +122,10 @@
 (defn current-video-id [] (item-prop "videoId"))
 
 (defn watch-video-change []
-  (let [c (chan)
-        current-video (atom nil)]
-    (dom/observe-mutation {:container dom/body
-                           :options   {:childList false :characterData false}
-                           :callback  (fn [& _]
-                                        (let [video-id (current-video-id)]
-                                          (when (not= video-id @current-video)
-                                            (reset! current-video video-id)
-                                            (put! c video-id))))})
-    c))
+  (-> (dom/observe-mutation {:container dom/body
+                             :options   {:childList false :characterData false}}
+                            (chan 1024 (map (fn [_] (current-video-id)))))
+      (r/distinct)))
 
 (defn init []
   (let [looper (atom nil)]
