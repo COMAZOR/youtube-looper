@@ -56,6 +56,7 @@
         toggle-button (create-looper-action-button)
         loop-bar (yt/create-loop-bar "ytp-ab-looper-progress")
         player-element (partial yt/player-element video)]
+
     ; ui setup
     (dom/insert-after! toggle-button (player-element ".ytp-settings-button"))
     (dom/insert-after! loop-bar (player-element ".ytp-load-progress"))
