@@ -86,9 +86,8 @@
 
 (defn init []
   (let [looper (atom nil)]
-    (dochan [video-id (yt/watch-video-change)]
-      (when (not= video-id :yt/no-video)
-        (if-not @looper (reset! looper (init-looper (dom/$ "video"))))
-        (>! @looper [:reset])))))
+    (dochan [video-id (yt/watch-video-change (chan 1024 (filter #(not= % :yt/no-video))))]
+      (if-not @looper (reset! looper (init-looper (dom/$ "video"))))
+      (>! @looper [:reset]))))
 
 (init)

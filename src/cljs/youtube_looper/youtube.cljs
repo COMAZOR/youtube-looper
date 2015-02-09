@@ -1,7 +1,7 @@
 (ns youtube-looper.youtube
   (:require-macros [cljs.core.async.macros :refer [go]]
                    [wilkerdev.util.macros :refer [dochan]])
-  (:require [cljs.core.async :refer [chan put! <! >! close!]]
+  (:require [cljs.core.async :refer [chan put! <! >! close! pipe]]
             [wilkerdev.util :refer [format]]
             [wilkerdev.util.dom :as dom]
             [wilkerdev.util.reactive :as r]))
@@ -40,8 +40,11 @@
 
 (defn current-video-id [] (item-prop "videoId"))
 
-(defn watch-video-change []
-  (-> (dom/observe-mutation {:container dom/body
-                             :options   {:childList false :characterData false}}
-                            (chan 1024 (map (fn [_] (or (current-video-id) ::no-video)))))
-      (r/distinct)))
+(defn watch-video-change
+  ([] (watch-video-change (chan 1024)))
+  ([c]
+    (pipe (dom/observe-mutation {:container dom/body
+                                 :options   {:childList false :characterData false}}
+                                (chan 1024 (comp (map (fn [_] (or (current-video-id) :yt/no-video)))
+                                                 (distinct))))
+          c)))
