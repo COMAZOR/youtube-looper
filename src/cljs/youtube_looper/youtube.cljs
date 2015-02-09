@@ -40,8 +40,8 @@
 
 (defn current-video-id [] (item-prop "videoId"))
 
-(defn watch-video-change
-  ([] (watch-video-change (chan 1024)))
+(defn watch-video-load
+  ([] (watch-video-load (chan 1024)))
   ([c]
     (pipe (dom/observe-mutation {:container dom/body
                                  :options   {:childList false :characterData false}}
