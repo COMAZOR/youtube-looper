@@ -76,7 +76,7 @@
   (set! (.-innerHTML el) s))
 
 (defn set-properties! [el properties]
-  (dom/setProperties properties))
+  (doto el (dom/setProperties (clj->js properties))))
 
 ; traversing
 
