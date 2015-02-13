@@ -72,6 +72,9 @@
 (defn remove-node! [el]
   (dom/removeNode el))
 
+(defn replace-node! [new-node old-node]
+  (dom/replaceNode new-node old-node))
+
 (defn set-html! [el s]
   (set! (.-innerHTML el) s))
 

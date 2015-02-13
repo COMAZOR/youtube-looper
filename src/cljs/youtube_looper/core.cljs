@@ -3,23 +3,13 @@
                    [wilkerdev.util.macros :refer [dochan]])
   (:require [cljs.core.async :refer [chan put! <! >! close!] :as async]
             [cljs.core.match :refer-macros [match]]
-            [wilkerdev.util :refer [format]]
             [wilkerdev.util.dom :as dom]
             [wilkerdev.util.reactive :as r]
-            [youtube-looper.youtube :as yt]))
+            [youtube-looper.youtube :as yt]
+            [youtube-looper.util :refer [seconds->time time->seconds]]
+            [youtube-looper.views :as v]))
 
 (defn constantly-chan [value] (chan 1 (map (constantly value))))
-
-(defn seconds->time [seconds]
-  (let [minutes (->> (/ seconds 60)
-                     (.floor js/Math))
-        seconds (mod seconds 60)]
-    (format "%02d:%02d" minutes seconds)))
-
-(defn time->seconds [time]
-  (let [[_ minutes seconds] (re-find #"^(\d{1,2}):(\d{1,2}(?:\.\d+)?)$" time)]
-    (+ (* (js/parseInt minutes) 60)
-       (js/parseFloat seconds))))
 
 (defn loop-back [video {:keys [start finish] :as loop}]
   (if loop
@@ -50,6 +40,11 @@
                                   :label "Youtube Looper"
                                   :html "AB"))
 
+(defn append-or-update! [parent lookup element]
+  (if-let [child (dom/$ parent lookup)]
+    (dom/replace-node! element child)
+    (dom/append! parent element)))
+
 (defn init-looper [video]
   (let [loop-ref (atom nil)
         comm (chan (async/sliding-buffer 1024))
@@ -71,6 +66,10 @@
         [:time-update]
           (loop-back video @loop-ref)
         [:show-dialog]
+          (let [dialog (v/dialog-template [{:name "Some Section" :start 40 :finish 80}])]
+            (.log js/console dialog)
+            (append-or-update! (dom/$ ".html5-video-controls") ".ytl-dialog" dialog))
+        [:pick-loop]
           (let [new-loop (pick-loop-prompt (or @loop-ref (loop-from-current-time video)))]
             (put! comm [:update-loop new-loop]))
         [:update-loop new-loop]
