@@ -18,13 +18,13 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="Leiningen: camel-snake-kebab:0.2.4" level="project" />
     <orderEntry type="library" name="Leiningen: clojure-complete:0.2.3" level="project" />
-    <orderEntry type="library" name="Leiningen: enfocus:2.1.0" level="project" />
+    <orderEntry type="library" name="Leiningen: enfocus:2.1.1" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/clojure:1.7.0-alpha5" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/clojurescript:0.0-2727" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/core.async:0.1.346.0-17112a-alpha" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/core.match:0.3.0-alpha4" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/tools.nrepl:0.2.3" level="project" />
-    <orderEntry type="library" name="Leiningen: domina:1.0.2" level="project" />
+    <orderEntry type="library" name="Leiningen: domina:1.0.3" level="project" />
     <orderEntry type="library" name="Leiningen: fresnel:0.2.2" level="project" />
     <orderEntry type="library" name="Leiningen: org.jsoup/jsoup:1.7.2" level="project" />
     <orderEntry type="library" name="Leiningen: com.google.javascript/closure-compiler:v20140625" level="project" />

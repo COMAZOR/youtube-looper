@@ -29,7 +29,7 @@
 (defn pick-loop-prompt [current]
   (let [start (prompt-time "Which time the loop should start? (eg: 0:34)" (seconds->time (get current :start 0)))
         finish (prompt-time "Which time the loop should end? (eg: 3:44)" (seconds->time (get current :finish 0)))]
-    {:start start :finish finish}))
+    {:start start :finish finish :name "Unnamed section"}))
 
 (defn loop-from-current-time [video]
   {:start (dom/video-current-time video)
@@ -45,12 +45,24 @@
     (dom/replace-node! element child)
     (dom/append! parent element)))
 
+(defn show-dialog [looper-data]
+  (let [dialog (v/dialog-template looper-data)]
+    (append-or-update! (dom/$ ".html5-video-controls") ".ytl-dialog" dialog)))
+
 (defn init-looper [video]
-  (let [loop-ref (atom nil)
+  (let [current-loop (atom nil)
+        video-loops (atom [])
         comm (chan (async/sliding-buffer 1024))
         toggle-button (create-looper-action-button)
         loop-bar (yt/create-loop-bar "ytp-ab-looper-progress")
-        player-element (partial yt/player-element video)]
+        player-element (partial yt/player-element video)
+        dialog-el #(dom/$ (dom/$ ".html5-video-controls") ".ytl-dialog")
+        loop-data #(hash-map :loops @video-loops
+                             :current-loop @current-loop
+                             :comm comm)]
+
+    (add-watch current-loop :watcher (fn [_ _ _ _] (put! comm [:refresh-dialog])))
+    (add-watch video-loops :watcher (fn [_ _ _ _] (put! comm [:refresh-dialog])))
 
     ; ui setup
     (dom/insert-after! toggle-button (player-element ".ytp-settings-button"))
@@ -58,27 +70,45 @@
 
     ; event setup
     (async/pipe (r/listen video "timeupdate" (constantly-chan [:time-update])) comm)
-    (async/pipe (r/listen toggle-button "click" (constantly-chan [:show-dialog])) comm)
+    (async/pipe (r/listen toggle-button "click" (constantly-chan [:invoke-looper])) comm)
 
     ; processing
     (dochan [msg comm]
       (match msg
+        [:invoke-looper]
+          (if (> (count @video-loops) 0)
+            (put! comm [:toggle-dialog])
+            (put! comm [:pick-loop]))
         [:time-update]
-          (loop-back video @loop-ref)
+          (loop-back video @current-loop)
+        [:refresh-dialog]
+          (if-let [dialog (dialog-el)]
+            (if (> (count @video-loops) 0)
+              (show-dialog (loop-data))
+              (dom/remove-node! dialog)))
         [:show-dialog]
-          (let [dialog (v/dialog-template [{:name "Some Section" :start 40 :finish 80}])]
-            (.log js/console dialog)
-            (append-or-update! (dom/$ ".html5-video-controls") ".ytl-dialog" dialog))
+          (if (> (count @video-loops) 0)
+            (show-dialog (loop-data))
+            (put! comm [:pick-loop]))
+        [:toggle-dialog]
+          (if-let [dialog (dialog-el)]
+            (dom/remove-node! dialog)
+            (show-dialog (loop-data)))
         [:pick-loop]
-          (let [new-loop (pick-loop-prompt (or @loop-ref (loop-from-current-time video)))]
-            (put! comm [:update-loop new-loop]))
-        [:update-loop new-loop]
+          (let [new-loop (pick-loop-prompt (or @current-loop (loop-from-current-time video)))]
+            (swap! video-loops conj new-loop)
+            (put! comm [:select-loop new-loop]))
+        [:select-loop new-loop]
           (do
             (yt/update-loop-representation loop-bar new-loop (dom/video-duration video))
-            (reset! loop-ref new-loop)
+            (reset! current-loop new-loop)
             (if new-loop (dom/video-seek! video (:start new-loop))))
-        [:reset]
-          (put! comm [:update-loop nil])
+        [:remove-loop loop]
+          (swap! video-loops #(remove (partial = loop) %))
+        [:reset loops]
+          (do
+            (reset! video-loops loops)
+            (put! comm [:select-loop nil]))
 
         :else (.log js/console "Got invalid message" (clj->js msg))))
 
@@ -88,6 +118,6 @@
   (let [looper (atom nil)]
     (dochan [video-id (yt/watch-video-load (chan 1024 (filter #(not= % :yt/no-video))))]
       (if-not @looper (reset! looper (init-looper (dom/$ "video"))))
-      (>! @looper [:reset]))))
+      (>! @looper [:reset [{:name "Sample Loop" :start 10 :finish 180}]]))))
 
 (init)
