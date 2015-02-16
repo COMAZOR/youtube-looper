@@ -72,7 +72,8 @@
         player-element (partial yt/player-element video)
         dialog-el #(dom/$ (dom/$ ".html5-video-controls") ".ytl-dialog")
         show-dialog #(show-dialog {:app-state @app-state
-                                   :comm      comm})]
+                                   :comm      comm
+                                   :video     video})]
 
     (add-watch app-state :watcher (fn [_ _ os ns]
                                     (if (not= (:loops os) (:loops ns))

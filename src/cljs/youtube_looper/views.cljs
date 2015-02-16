@@ -60,12 +60,18 @@
 
 (em/defsnippet new-loop-row :compiled "templates/yt-dialog.html"
   [".ytl-new-loop"]
-  [{:keys [comm app-state]}]
+  [{:keys [comm app-state video]}]
   [".ytp-menu-title"] (ef/content (t "new_loop"))
 
   ["input"] (ef/do->
               (set-style input-style)
-              (events/listen :keypress #(.stopPropagation %)))
+              (events/listen :keypress (fn [e]
+                                         (.stopPropagation e)
+                                         (when (and (.-ctrlKey e)
+                                                    (= (.-keyCode e) 3))
+                                           (let [target (.-target e)]
+                                             (set! (.-value target) (seconds->time (.-currentTime video)))
+                                             (.dispatchEvent target (js/Event. "input")))))))
 
   ["input[name=start]"] (ef/do->
                           (ef/set-attr :value (get-in app-state [:new-loop :start]))
