@@ -100,7 +100,7 @@
     (dochan [msg comm]
       (match msg
         [:invoke-looper]
-          (if (not (dialog-el))
+          (if-not (dialog-el)
             (put! comm [:show-dialog]))
         [:time-update]
           (loop-back video (:current-loop @app-state))
