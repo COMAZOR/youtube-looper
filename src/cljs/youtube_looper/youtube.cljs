@@ -37,13 +37,24 @@
   (if-let [node (dom/$ (str "meta[itemprop=" name "]"))]
     (.-content node)))
 
-(defn current-video-id [] (item-prop "videoId"))
+(defn extract-video-id [watch-url]
+  (if-let [[_ video-id] (re-find #"watch\?.*&?v=([^&]+)" watch-url)]
+    video-id))
 
-(defn watch-video-load
-  ([] (watch-video-load (chan 1024)))
-  ([c]
-    (pipe (dom/observe-mutation {:container dom/body
-                                 :options   {:childList false :characterData false}}
-                                (chan 1024 (comp (map (fn [_] (or (current-video-id) :yt/no-video)))
-                                                 (distinct))))
+(defn current-video-id-canonical []
+  (some-> (dom/$ "link[rel=canonical]")
+          (aget "href")
+          (extract-video-id)))
+
+(defn current-video-id []
+  (or (item-prop "videoId")
+      (current-video-id-canonical)))
+
+(defn watch-video-load [c]
+  (let [in-chan (dom/observe-mutation {:container dom/body
+                                       :options   {:childList false :characterData false}}
+                                      (chan 1024 (comp (map (fn [_] (or (current-video-id) :yt/no-video)))
+                                                       (distinct))))]
+    (put! in-chan :go)
+    (pipe in-chan
           c)))

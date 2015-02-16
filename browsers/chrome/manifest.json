@@ -8,7 +8,8 @@
     {
       "matches": ["*://*.youtube.com/*"],
       "js": ["js/youtube-looper.js"],
-      "css": ["youtube-looper.css"]
+      "css": ["youtube-looper.css"],
+      "all_frames": true
     }
   ],
   "icons": {
