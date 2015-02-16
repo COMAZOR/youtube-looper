@@ -21,8 +21,6 @@
 
 (defn by-id [id] (.getElementById document id))
 
-(defn set-style! [el style value] (style/setStyle el style value))
-
 ; style
 
 (defn has-class? [el name]
@@ -44,8 +42,9 @@
      (add-class! el name)
      (remove-class! el name))))
 
-(defn set-css! [el n v]
-  (style/setStyle el (name n) v))
+(defn set-style!
+  ([el styles] (style/setStyle el (clj->js styles)))
+  ([el style value] (style/setStyle el (name style) value)))
 
 ; manipulation
 

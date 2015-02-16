@@ -25,14 +25,14 @@
   (let [start-pct (/ start video-duration)
         size-pct (/ (- finish start) video-duration)]
     (doto bar
-      (dom/set-css! "left" (str (ensure-number (* start-pct 100)) "%"))
-      (dom/set-css! "transform" (str "scaleX(" (ensure-number size-pct) ")")))))
+      (dom/set-style! {:left      (str (ensure-number (* start-pct 100)) "%")
+                       :transform (str "scaleX(" (ensure-number size-pct) ")")}))))
 
 (defn create-loop-bar [class]
   (doto (dom/create-element! "div")
     (dom/add-class! class)
-    (dom/set-css! "left" "0%")
-    (dom/set-css! "transform" "scaleX(0)")))
+    (dom/set-style! {:left      "0%"
+                     :transform "scaleX(0)"})))
 
 (defn item-prop [name]
   (if-let [node (dom/$ (str "meta[itemprop=" name "]"))]
