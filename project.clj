@@ -10,13 +10,14 @@
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
                  [camel-snake-kebab "0.2.4"]
                  [enfocus "2.1.1"]
-                 [org.clojure/core.match "0.3.0-alpha4"]]
+                 [org.clojure/core.match "0.3.0-alpha4"]
+                 [datascript "0.9.0"]]
 
-  :plugins [[lein-cljsbuild "1.0.3"]]
+  :plugins [[lein-cljsbuild "1.0.4"]]
 
   :cljsbuild {:builds {:dev     {:source-paths ["src/cljs"]
                                  :compiler     {:output-to     "browsers/chrome/js/youtube-looper.js"
-                                                :optimizations :whitespace
+                                                :optimizations :none
                                                 :pretty-print  true}}
                        :release {:source-paths ["src/cljs"]
                                  :compiler     {:output-to     "browsers/chrome/js/youtube-looper.js"
