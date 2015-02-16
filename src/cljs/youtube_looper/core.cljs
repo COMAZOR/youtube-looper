@@ -120,8 +120,6 @@
           (swap! app-state assoc :dialog-visible? true)
         [:hide-dialog]
           (swap! app-state assoc :dialog-visible? false)
-        [:toggle-dialog]
-          (swap! app-state assoc :dialog-visible? (not (dialog-el)))
         [:pick-loop]
           (let [new-loop (pick-loop-prompt (or (:current-loop @app-state) (loop-from-current-time video)))]
             (swap! app-state add-loop new-loop)
