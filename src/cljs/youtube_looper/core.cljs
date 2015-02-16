@@ -7,7 +7,7 @@
             [wilkerdev.util.reactive :as r]
             [youtube-looper.youtube :as yt]
             [youtube-looper.util :refer [seconds->time time->seconds]]
-            [youtube-looper.views :as v]))
+            [youtube-looper.views :refer [dialog-template]]))
 
 (defn constantly-chan [value] (chan 1 (map (constantly value))))
 
@@ -46,7 +46,7 @@
     (dom/append! parent element)))
 
 (defn show-dialog [looper-data]
-  (let [dialog (v/dialog-template looper-data)]
+  (let [dialog (dialog-template looper-data)]
     (append-or-update! (dom/$ ".html5-video-controls") ".ytl-dialog" dialog)))
 
 (defn add-loop [app-state loop]
@@ -74,7 +74,7 @@
         show-dialog #(show-dialog {:app-state @app-state
                                    :comm      comm})]
 
-    (add-watch app-state :watcher (fn [_ _ _ _] (put! comm [:refresh-dialog])))
+    (add-watch app-state :watcher (fn [_ _ _ _] (put! comm [:refresh-ui])))
 
     ; ui setup
     (dom/insert-after! toggle-button (player-element ".ytp-settings-button"))
@@ -93,26 +93,28 @@
             (put! comm [:pick-loop]))
         [:time-update]
           (loop-back video (:current-loop @app-state))
-        [:refresh-dialog]
-          (if-let [dialog (dialog-el)]
-            (if (> (count (:loops @app-state)) 0)
+        [:refresh-ui]
+          (do
+            (yt/update-loop-representation loop-bar (:current-loop @app-state) (dom/video-duration video))
+
+            (when-let [dialog (dialog-el)]
+              (dom/remove-node! dialog)
+              (dom/set-style! toggle-button :color nil))
+
+            (when (and (:dialog-visible? @app-state)
+                       (> (count (:loops @app-state)) 0))
               (show-dialog)
-              (dom/remove-node! dialog)))
+              (dom/set-style! toggle-button :color "#fff")))
         [:show-dialog]
-          (if (> (count (:loops @app-state)) 0)
-            (show-dialog)
-            (put! comm [:pick-loop]))
+          (swap! app-state assoc :dialog-visible? true)
         [:toggle-dialog]
-          (if-let [dialog (dialog-el)]
-            (dom/remove-node! dialog)
-            (show-dialog))
+          (swap! app-state assoc :dialog-visible? (not (dialog-el)))
         [:pick-loop]
           (let [new-loop (pick-loop-prompt (or (:current-loop @app-state) (loop-from-current-time video)))]
             (swap! app-state add-loop new-loop)
             (put! comm [:select-loop new-loop]))
         [:select-loop new-loop]
           (do
-            (yt/update-loop-representation loop-bar new-loop (dom/video-duration video))
             (swap! app-state set-current-loop new-loop)
             (if new-loop (dom/video-seek! video (:start new-loop))))
         [:remove-loop loop]
