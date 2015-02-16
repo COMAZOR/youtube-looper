@@ -20,6 +20,12 @@
       (when (> position finish)
         (dom/video-seek! video start)))))
 
+(defn parse-time [time]
+  (cond
+    (nil? time) nil
+    (re-find #"^(\d{1,2}):(\d{1,2}(?:\.\d+)?)$" time) (time->seconds time)
+    (re-find #"^\d+(?:\.\d+)?$" time) (js/parseFloat time)))
+
 (defn prompt-time [message current]
   (loop []
     (let [time (js/prompt message (or current ""))]
@@ -28,16 +34,6 @@
         (re-find #"^(\d{1,2}):(\d{1,2}(?:\.\d+)?)$" time) (time->seconds time)
         (re-find #"^\d+(?:\.\d+)?$" time) (js/parseFloat time)
         :else (do (js/alert "Invalid time format, try again.") (recur))))))
-
-(defn pick-loop-prompt [{c-start :start c-finish :finish}]
-  (when-let [[start finish] (all-or-nothing->
-              (prompt-time "Which time the loop should start? (eg: 0:34)" (seconds->time c-start))
-              (prompt-time "Which time the loop should end? (eg: 3:44)" (seconds->time c-finish)))]
-    {:start start :finish finish :name (t "unnamed_section")}))
-
-(defn loop-from-current-time [video]
-  {:start (dom/video-current-time video)
-   :finish (inc (dom/video-current-time video))})
 
 (defn create-looper-action-button []
   (yt/create-player-action-button :class "ytp-button-ytlooper"
@@ -72,6 +68,10 @@
 (defn sync-loops-for-video [video-id loops]
   (store/set! (store-key video-id) loops))
 
+(defn normalize-new-loop [{:keys [start finish]}]
+  (when-let [[start finish] (all-or-nothing-> (parse-time start) (parse-time finish))]
+    {:start start :finish finish :name (t "unnamed_section")}))
+
 (defn init-looper-process [video]
   (let [app-state (atom nil)
         comm (chan (async/sliding-buffer 1024))
@@ -85,7 +85,8 @@
     (add-watch app-state :watcher (fn [_ _ os ns]
                                     (if (not= (:loops os) (:loops ns))
                                       (sync-loops-for-video (yt/current-video-id) (:loops ns)))
-                                    (put! comm [:refresh-ui])))
+                                    (if (= (:new-loop os) (:new-loop ns))
+                                      (put! comm [:refresh-ui]))))
 
     ; ui setup
     (dom/insert-after! toggle-button (player-element ".ytp-settings-button"))
@@ -100,9 +101,7 @@
       (match msg
         [:invoke-looper]
           (if (not (dialog-el))
-            (if (> (count (:loops @app-state)) 0)
-              (put! comm [:show-dialog])
-              (put! comm [:pick-new-loop])))
+            (put! comm [:show-dialog]))
         [:time-update]
           (loop-back video (:current-loop @app-state))
         [:refresh-ui]
@@ -113,8 +112,7 @@
               (dom/remove-node! dialog)
               (dom/set-style! toggle-button :color nil))
 
-            (when (and (:dialog-visible? @app-state)
-                       (> (count (:loops @app-state)) 0))
+            (when (:dialog-visible? @app-state)
               (show-dialog)
               (events/listenOnce dom/body "click" #(put! comm [:hide-dialog]))
               (dom/set-style! toggle-button :color "#fff")))
@@ -122,8 +120,9 @@
           (swap! app-state assoc :dialog-visible? true)
         [:hide-dialog]
           (swap! app-state assoc :dialog-visible? false)
-        [:pick-new-loop]
-          (when-let [new-loop (pick-loop-prompt (or (:current-loop @app-state) (loop-from-current-time video)))]
+        [:create-new-loop]
+          (when-let [new-loop (normalize-new-loop (:new-loop @app-state))]
+            (swap! app-state assoc :new-loop {})
             (swap! app-state add-loop new-loop)
             (put! comm [:select-loop new-loop]))
         [:select-loop new-loop]
@@ -136,6 +135,10 @@
             (swap! app-state add-loop (assoc loop :name new-name)))
         [:remove-loop loop]
           (swap! app-state remove-loop loop)
+        [:update-new-start time]
+          (swap! app-state assoc-in [:new-loop :start] time)
+        [:update-new-finish time]
+          (swap! app-state assoc-in [:new-loop :finish] time)
         [:reset loops]
           (do
             (swap! app-state reset-loops loops)

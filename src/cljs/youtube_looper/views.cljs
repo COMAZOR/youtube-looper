@@ -19,6 +19,12 @@
 (def blue-link-style
   (merge link-style {:color blue}))
 
+(def input-style
+  {:width     "27px"
+   :border    "1px solid #2F2F2D"
+   :font-size "11px"
+   :padding   "2px 4px"})
+
 (defn set-style [styles] (mapply ef/set-style styles))
 
 (defn loop-time [{:keys [start finish]}]
@@ -54,10 +60,22 @@
 
 (em/defsnippet new-loop-row :compiled "templates/yt-dialog.html"
   [".ytl-new-loop"]
-  [{:keys [comm]}]
-  [".ytp-menu-title"] (ef/do->
-                        (ef/content (t "new_loop"))
-                        (events/listen :click #(put! comm [:pick-new-loop]))))
+  [{:keys [comm app-state]}]
+  [".ytp-menu-title"] (ef/content (t "new_loop"))
+
+  ["input"] (ef/do->
+              (set-style input-style)
+              (events/listen :keypress #(.stopPropagation %)))
+
+  ["input[name=start]"] (ef/do->
+                          (ef/set-attr :value (get-in app-state [:new-loop :start]))
+                          (events/listen :input #(put! comm [:update-new-start (.. % -target -value)])))
+
+  ["input[name=finish]"] (ef/do->
+                           (ef/set-attr :value (get-in app-state [:new-loop :finish]))
+                           (events/listen :input #(put! comm [:update-new-finish (.. % -target -value)])))
+
+  ["a"] (events/listen :click #(put! comm [:create-new-loop])))
 
 (em/deftemplate dialog-template :compiled "templates/yt-dialog.html"
   [{{:keys [loops current-loop]} :app-state :as looper}]
