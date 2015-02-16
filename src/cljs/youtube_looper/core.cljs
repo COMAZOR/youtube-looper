@@ -1,6 +1,6 @@
 (ns youtube-looper.core
   (:require-macros [cljs.core.async.macros :refer [go]]
-                   [wilkerdev.util.macros :refer [dochan]])
+                   [wilkerdev.util.macros :refer [dochan all-or-nothing->]])
   (:require [cljs.core.async :refer [chan put! <! >! close!] :as async]
             [cljs.core.match :refer-macros [match]]
             [goog.events :as events]
@@ -23,14 +23,15 @@
   (loop []
     (let [time (js/prompt message (or current ""))]
       (cond
-        (nil? time) (recur)
+        (nil? time) nil
         (re-find #"^(\d{1,2}):(\d{1,2}(?:\.\d+)?)$" time) (time->seconds time)
         (re-find #"^\d+(?:\.\d+)?$" time) (js/parseFloat time)
         :else (do (js/alert "Invalid time format, try again.") (recur))))))
 
-(defn pick-loop-prompt [current]
-  (let [start (prompt-time "Which time the loop should start? (eg: 0:34)" (seconds->time (get current :start 0)))
-        finish (prompt-time "Which time the loop should end? (eg: 3:44)" (seconds->time (get current :finish 0)))]
+(defn pick-loop-prompt [{c-start :start c-finish :finish}]
+  (when-let [[start finish] (all-or-nothing->
+              (prompt-time "Which time the loop should start? (eg: 0:34)" (seconds->time c-start))
+              (prompt-time "Which time the loop should end? (eg: 3:44)" (seconds->time c-finish)))]
     {:start start :finish finish :name "Unnamed section"}))
 
 (defn loop-from-current-time [video]
@@ -121,7 +122,7 @@
         [:hide-dialog]
           (swap! app-state assoc :dialog-visible? false)
         [:pick-new-loop]
-          (let [new-loop (pick-loop-prompt (or (:current-loop @app-state) (loop-from-current-time video)))]
+          (when-let [new-loop (pick-loop-prompt (or (:current-loop @app-state) (loop-from-current-time video)))]
             (swap! app-state add-loop new-loop)
             (put! comm [:select-loop new-loop]))
         [:select-loop new-loop]

@@ -34,3 +34,11 @@
      (let [res# (do ~@body)]
        (.timeEnd js/console ~message)
        res#)))
+
+(defmacro all-or-nothing-> [expr & forms]
+  (let [g (gensym)
+        pstep (fn [step] `(if (nil? (last ~g)) nil (conj ~g ~step)))]
+    `(let [~g [~expr]
+           ~@(interleave (repeat g) (map pstep forms))
+           ~g (if (nil? (last ~g)) nil ~g)]
+       ~g)))
