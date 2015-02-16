@@ -29,7 +29,7 @@
   ["a"] (events/listen :click #(put! comm [:select-loop nil])))
 
 (em/deftemplate dialog-template :compiled "templates/yt-dialog.html"
-  [{:keys [loops current-loop] :as looper}]
+  [{{:keys [loops current-loop]} :app-state :as looper}]
   [".ytp-menu-content"] (ef/do->
                           (ef/content (map loop-item loops (repeat looper)))
                           (ef/append (if current-loop (disable-loop-button looper)))))
