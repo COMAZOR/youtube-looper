@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Youtube Looper",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "AB Looping for youtube videos",
   "permissions": [],
   "content_scripts": [
