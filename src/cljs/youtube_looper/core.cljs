@@ -4,6 +4,7 @@
   (:require [cljs.core.async :refer [chan put! <! >! close!] :as async]
             [cljs.core.match :refer-macros [match]]
             [goog.events :as events]
+            [wilkerdev.browsers.chrome :refer [t]]
             [wilkerdev.local-storage :as store]
             [wilkerdev.util.dom :as dom]
             [wilkerdev.util.reactive :as r]
@@ -32,7 +33,7 @@
   (when-let [[start finish] (all-or-nothing->
               (prompt-time "Which time the loop should start? (eg: 0:34)" (seconds->time c-start))
               (prompt-time "Which time the loop should end? (eg: 3:44)" (seconds->time c-finish)))]
-    {:start start :finish finish :name "Unnamed section"}))
+    {:start start :finish finish :name (t "unnamed_section")}))
 
 (defn loop-from-current-time [video]
   {:start (dom/video-current-time video)

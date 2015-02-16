@@ -17,7 +17,7 @@
 
   :cljsbuild {:builds {:dev     {:source-paths ["src/cljs"]
                                  :compiler     {:output-to     "browsers/chrome/js/youtube-looper.js"
-                                                :optimizations :none
+                                                :optimizations :whitespace
                                                 :pretty-print  true}}
                        :release {:source-paths ["src/cljs"]
                                  :compiler     {:output-to     "browsers/chrome/js/youtube-looper.js"

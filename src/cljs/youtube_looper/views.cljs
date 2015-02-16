@@ -4,7 +4,8 @@
             [enfocus.events :as events]
             [cljs.core.async :refer [put! pipe]]
             [youtube-looper.util :refer [seconds->time]]
-            [wilkerdev.util :refer [mapply]]))
+            [wilkerdev.util :refer [mapply]]
+            [wilkerdev.browsers.chrome :refer [t]]))
 
 (def blue "#167ac6")
 
@@ -47,20 +48,21 @@
   [".ytl-loop-disable"]
   [{:keys [comm]}]
   ["a"] (ef/do->
+          (ef/content (t "disable_loop"))
           (set-style blue-link-style)
           (events/listen :click #(put! comm [:select-loop nil]))))
 
-(em/defsnippet new-loop-button :compiled "templates/yt-dialog.html"
+(em/defsnippet new-loop-row :compiled "templates/yt-dialog.html"
   [".ytl-new-loop"]
   [{:keys [comm]}]
-  ["a"] (ef/do->
-          (set-style blue-link-style)
-          (events/listen :click #(put! comm [:pick-new-loop]))))
+  [".ytp-menu-title"] (ef/do->
+                        (ef/content (t "new_loop"))
+                        (events/listen :click #(put! comm [:pick-new-loop]))))
 
 (em/deftemplate dialog-template :compiled "templates/yt-dialog.html"
   [{{:keys [loops current-loop]} :app-state :as looper}]
   [".ytp-menu-container"] (events/listen :click #(.stopPropagation %))
   [".ytp-menu-content"] (ef/do->
                           (ef/content (map loop-item (sort-by :start loops) (repeat looper)))
-                          (ef/append (new-loop-button looper))
+                          (ef/append (new-loop-row looper))
                           (ef/append (if current-loop (disable-loop-button looper)))))

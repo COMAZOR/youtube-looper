@@ -1,0 +1,13 @@
+{
+  "new_loop": {
+    "message": "Create a new loop"
+  },
+
+  "disable_loop": {
+    "message": "Disable loop"
+  },
+
+  "unnamed_section": {
+    "message": "Unnamed section"
+  }
+}
