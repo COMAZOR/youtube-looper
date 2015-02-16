@@ -3,6 +3,7 @@
                    [wilkerdev.util.macros :refer [dochan]])
   (:require [cljs.core.async :refer [chan put! <! >! close!] :as async]
             [cljs.core.match :refer-macros [match]]
+            [goog.events :as events]
             [wilkerdev.util.dom :as dom]
             [wilkerdev.util.reactive :as r]
             [youtube-looper.youtube :as yt]
@@ -88,9 +89,10 @@
     (dochan [msg comm]
       (match msg
         [:invoke-looper]
-          (if (> (count (:loops @app-state)) 0)
-            (put! comm [:toggle-dialog])
-            (put! comm [:pick-loop]))
+          (if (not (dialog-el))
+            (if (> (count (:loops @app-state)) 0)
+              (put! comm [:show-dialog])
+              (put! comm [:pick-loop])))
         [:time-update]
           (loop-back video (:current-loop @app-state))
         [:refresh-ui]
@@ -104,9 +106,12 @@
             (when (and (:dialog-visible? @app-state)
                        (> (count (:loops @app-state)) 0))
               (show-dialog)
+              (events/listenOnce dom/body "click" #(put! comm [:hide-dialog]))
               (dom/set-style! toggle-button :color "#fff")))
         [:show-dialog]
           (swap! app-state assoc :dialog-visible? true)
+        [:hide-dialog]
+          (swap! app-state assoc :dialog-visible? false)
         [:toggle-dialog]
           (swap! app-state assoc :dialog-visible? (not (dialog-el)))
         [:pick-loop]

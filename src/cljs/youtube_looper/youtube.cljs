@@ -3,8 +3,7 @@
                    [wilkerdev.util.macros :refer [dochan]])
   (:require [cljs.core.async :refer [chan put! <! >! close! pipe]]
             [wilkerdev.util :refer [format]]
-            [wilkerdev.util.dom :as dom]
-            [wilkerdev.util.reactive :as r]))
+            [wilkerdev.util.dom :as dom]))
 
 (defn player-element [video query]
   (some-> (dom/ancestor video (dom/query-matcher ".html5-video-player"))
