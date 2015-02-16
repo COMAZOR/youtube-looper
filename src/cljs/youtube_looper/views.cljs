@@ -35,6 +35,7 @@
 
 (em/deftemplate dialog-template :compiled "templates/yt-dialog.html"
   [{{:keys [loops current-loop]} :app-state :as looper}]
+  [".ytp-menu-container"] (events/listen :click #(.stopPropagation %))
   [".ytp-menu-content"] (ef/do->
                           (ef/content (map loop-item loops (repeat looper)))
                           (ef/append (new-loop-button looper))
