@@ -61,7 +61,8 @@
 
 (defn normalize-new-loop [{:keys [start finish]}]
   (when-let [[start finish] (all-or-nothing-> (parse-time start) (parse-time finish))]
-    {:start start :finish finish :name (t "unnamed_section")}))
+    (if (< start finish)
+      {:start start :finish finish :name (t "unnamed_section")})))
 
 (defn init-looper-process [video]
   (let [app-state (atom nil)
