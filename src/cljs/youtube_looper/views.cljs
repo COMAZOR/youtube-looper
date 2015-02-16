@@ -11,6 +11,8 @@
 
 (def blue "#167ac6")
 
+(def yellow "rgb(232, 214, 20)")
+
 (def link-style
   {:color "#fff"
    :cursor "pointer"
@@ -23,9 +25,10 @@
 
 (em/defsnippet loop-item :compiled "templates/yt-dialog.html"
   [".ytp-menu-row:first-child"]
-  [{:keys [name] :as loop} {:keys [comm]}]
+  [{:keys [name] :as loop} {:keys [comm] {:keys [current-loop]} :app-state}]
   [".ytp-menu-title"] (ef/do->
-                        (set-style link-style)
+                        (set-style (merge link-style
+                                          (if (= loop current-loop) {:color yellow} {})))
                         (ef/content name)
                         (events/listen :click #(put! comm [:rename-loop loop])))
   [".ytl-loop-time"] (ef/do->
