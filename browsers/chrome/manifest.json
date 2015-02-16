@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Youtube Looper",
   "version": "0.3.0",
-  "description": "AB Looping for youtube videos",
+  "description": "AB Loops for youtube videos",
   "permissions": [],
   "default_locale": "en",
   "content_scripts": [
