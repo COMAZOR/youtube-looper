@@ -6,9 +6,6 @@
             [youtube-looper.util :refer [seconds->time]]
             [wilkerdev.util :refer [mapply]]))
 
-(defn loop-time [{:keys [start finish]}]
-  (str (seconds->time start) " - " (seconds->time finish)))
-
 (def blue "#167ac6")
 
 (def yellow "rgb(232, 214, 20)")
@@ -22,6 +19,9 @@
   (merge link-style {:color blue}))
 
 (defn set-style [styles] (mapply ef/set-style styles))
+
+(defn loop-time [{:keys [start finish]}]
+  (str (seconds->time start) " - " (seconds->time finish)))
 
 (defn same-loop-time? [loop current-loop]
   (= (select-keys loop [:start :finish])
