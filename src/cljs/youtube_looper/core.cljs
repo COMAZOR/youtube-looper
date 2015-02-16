@@ -130,6 +130,10 @@
           (do
             (swap! app-state set-current-loop new-loop)
             (if new-loop (dom/video-seek! video (:start new-loop))))
+        [:rename-loop loop]
+          (when-let [new-name (js/prompt "New loop name" (:name loop))]
+            (swap! app-state remove-loop loop)
+            (swap! app-state add-loop (assoc loop :name new-name)))
         [:remove-loop loop]
           (swap! app-state remove-loop loop)
         [:reset loops]

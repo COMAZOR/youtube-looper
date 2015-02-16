@@ -14,7 +14,7 @@
   [".ytp-menu-title"] (ef/do->
                         (ef/set-style :cursor "pointer")
                         (ef/content name)
-                        (events/listen :click #(put! comm [:select-loop loop])))
+                        (events/listen :click #(put! comm [:rename-loop loop])))
   [".ytl-loop-time"] (ef/do->
                        (ef/set-style :cursor "pointer")
                        (ef/content (loop-time loop))
