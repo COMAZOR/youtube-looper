@@ -23,12 +23,16 @@
 
 (defn set-style [styles] (mapply ef/set-style styles))
 
+(defn same-loop-time? [loop current-loop]
+  (= (select-keys loop [:start :finish])
+     (select-keys current-loop [:start :finish])))
+
 (em/defsnippet loop-item :compiled "templates/yt-dialog.html"
   [".ytp-menu-row:first-child"]
   [{:keys [name] :as loop} {:keys [comm] {:keys [current-loop]} :app-state}]
   [".ytp-menu-title"] (ef/do->
                         (set-style (merge link-style
-                                          (if (= loop current-loop) {:color yellow} {})))
+                                          (if (same-loop-time? loop current-loop) {:color yellow} {})))
                         (ef/content name)
                         (events/listen :click #(put! comm [:rename-loop loop])))
   [".ytl-loop-time"] (ef/do->
