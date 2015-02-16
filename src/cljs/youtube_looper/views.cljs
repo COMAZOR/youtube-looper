@@ -75,7 +75,9 @@
                            (ef/set-attr :value (get-in app-state [:new-loop :finish]))
                            (events/listen :input #(put! comm [:update-new-finish (.. % -target -value)])))
 
-  ["a"] (events/listen :click #(put! comm [:create-new-loop])))
+  ["a"] (ef/do->
+          (set-style blue-link-style)
+          (events/listen :click #(put! comm [:create-new-loop]))))
 
 (em/deftemplate dialog-template :compiled "templates/yt-dialog.html"
   [{{:keys [loops current-loop]} :app-state :as looper}]
