@@ -13,3 +13,6 @@
 
 (defn set! [key value]
   (.setItem local-storage (name key) (pr-str value)))
+
+(defn remove! [key]
+  (.removeItem local-storage key))
