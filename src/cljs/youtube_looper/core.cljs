@@ -26,15 +26,6 @@
     (re-find #"^(\d{1,2}):(\d{1,2}(?:\.\d+)?)$" time) (time->seconds time)
     (re-find #"^\d+(?:\.\d+)?$" time) (js/parseFloat time)))
 
-(defn prompt-time [message current]
-  (loop []
-    (let [time (js/prompt message (or current ""))]
-      (cond
-        (nil? time) nil
-        (re-find #"^(\d{1,2}):(\d{1,2}(?:\.\d+)?)$" time) (time->seconds time)
-        (re-find #"^\d+(?:\.\d+)?$" time) (js/parseFloat time)
-        :else (do (js/alert "Invalid time format, try again.") (recur))))))
-
 (defn create-looper-action-button []
   (yt/create-player-action-button :class "ytp-button-ytlooper"
                                   :label "Youtube Looper"
