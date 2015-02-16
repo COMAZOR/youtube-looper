@@ -24,4 +24,5 @@
                                                 :output-dir    "browsers/chrome/js"
                                                 :optimizations :advanced
                                                 :pretty-print  false
+                                                :externs       ["externs/chrome_extensions.js"]
                                                 :source-map    "browsers/chrome/js/youtube-looper.js.map"}}}})
