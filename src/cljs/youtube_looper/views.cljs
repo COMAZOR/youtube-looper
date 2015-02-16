@@ -31,7 +31,7 @@
 (em/defsnippet new-loop-button :compiled "templates/yt-dialog.html"
   [".ytl-new-loop"]
   [{:keys [comm]}]
-  ["a"] (events/listen :click #(put! comm [:pick-loop])))
+  ["a"] (events/listen :click #(put! comm [:pick-new-loop])))
 
 (em/deftemplate dialog-template :compiled "templates/yt-dialog.html"
   [{{:keys [loops current-loop]} :app-state :as looper}]

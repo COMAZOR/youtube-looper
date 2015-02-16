@@ -100,7 +100,7 @@
           (if (not (dialog-el))
             (if (> (count (:loops @app-state)) 0)
               (put! comm [:show-dialog])
-              (put! comm [:pick-loop])))
+              (put! comm [:pick-new-loop])))
         [:time-update]
           (loop-back video (:current-loop @app-state))
         [:refresh-ui]
@@ -120,7 +120,7 @@
           (swap! app-state assoc :dialog-visible? true)
         [:hide-dialog]
           (swap! app-state assoc :dialog-visible? false)
-        [:pick-loop]
+        [:pick-new-loop]
           (let [new-loop (pick-loop-prompt (or (:current-loop @app-state) (loop-from-current-time video)))]
             (swap! app-state add-loop new-loop)
             (put! comm [:select-loop new-loop]))
