@@ -4,6 +4,7 @@
   (:require [cljs.core.async :refer [chan put! <! >! close!] :as async]
             [cljs.core.match :refer-macros [match]]
             [goog.events :as events]
+            [wilkerdev.local-storage :as store]
             [wilkerdev.util.dom :as dom]
             [wilkerdev.util.reactive :as r]
             [youtube-looper.youtube :as yt]
@@ -62,8 +63,12 @@
 (defn set-current-loop [app-state loop]
   (assoc app-state :current-loop loop))
 
-(defn loops-for-video [video-id]
-  [{:name "Sample Loop" :start 10 :finish 180}])
+(defn store-key [video-id] (str "video-loops-" video-id))
+
+(defn loops-for-video [video-id] (store/get (store-key video-id) []))
+
+(defn sync-loops-for-video [video-id loops]
+  (store/set! (store-key video-id) loops))
 
 (defn init-looper-process [video]
   (let [app-state (atom nil)
@@ -75,7 +80,10 @@
         show-dialog #(show-dialog {:app-state @app-state
                                    :comm      comm})]
 
-    (add-watch app-state :watcher (fn [_ _ _ _] (put! comm [:refresh-ui])))
+    (add-watch app-state :watcher (fn [_ _ os ns]
+                                    (if (not= (:loops os) (:loops ns))
+                                      (sync-loops-for-video (yt/current-video-id) (:loops ns)))
+                                    (put! comm [:refresh-ui])))
 
     ; ui setup
     (dom/insert-after! toggle-button (player-element ".ytp-settings-button"))
