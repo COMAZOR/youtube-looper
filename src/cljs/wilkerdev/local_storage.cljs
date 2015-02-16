@@ -7,9 +7,9 @@
 (defn get
   ([key] (get key nil))
   ([key default]
-    (if-let [value (aget local-storage (name key))]
+    (if-let [value (.getItem local-storage (name key))]
       (read-string value)
       default)))
 
 (defn set! [key value]
-  (aset local-storage (name key) (pr-str value)))
+  (.setItem local-storage (name key) (pr-str value)))
