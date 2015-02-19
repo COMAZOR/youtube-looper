@@ -57,7 +57,10 @@
 (defn loops-for-video [video-id] (store/get (store-key video-id) []))
 
 (defn sync-loops-for-video [video-id loops]
-  (store/set! (store-key video-id) loops))
+  (let [key (store-key video-id)]
+    (if (empty? loops)
+      (store/remove! key)
+      (store/set! key loops))))
 
 (defn normalize-new-loop [{:keys [start finish]}]
   (when-let [[start finish] (all-or-nothing-> (parse-time start) (parse-time finish))]
