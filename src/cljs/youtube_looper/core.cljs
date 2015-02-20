@@ -56,7 +56,7 @@
 
 (defn loops-for-video [video-id] (store/get (store-key video-id) []))
 
-(defn sync-loops-for-video [video-id loops]
+(defn sync-loops-for-video! [video-id loops]
   (let [key (store-key video-id)]
     (if (empty? loops)
       (store/remove! key)
@@ -80,7 +80,7 @@
 
     (add-watch app-state :watcher (fn [_ _ os ns]
                                     (if (not= (:loops os) (:loops ns))
-                                      (sync-loops-for-video (yt/current-video-id) (:loops ns)))
+                                      (sync-loops-for-video! (yt/current-video-id) (:loops ns)))
                                     (if (= (:new-loop os) (:new-loop ns))
                                       (put! comm [:refresh-ui]))))
 
