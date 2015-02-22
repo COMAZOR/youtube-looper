@@ -9,7 +9,6 @@
     {
       "matches": ["*://*.youtube.com/*"],
       "js": [
-        "vendor/firebase.js",
         "js/youtube-looper.js"
       ],
       "css": ["youtube-looper.css"],
