@@ -32,7 +32,7 @@
   (.replace string (js/RegExp "[-\\^$*+?.()|[\\]{}]" "g") "\\$&"))
 
 (defn distinct-consecutive
-  "Returns a lazy sequence of the elements of coll with duplicates removed"
+  "Returns a lazy sequence of the elements of coll with consecutive duplicates removed"
   ([]
    (fn [rf]
      (let [last-seen (volatile! ::unseen)]
@@ -47,10 +47,10 @@
   ([coll]
    (let [step (fn step [xs seen]
                 (lazy-seq
-                  ((fn [[f :as xs] seen]
+                  ((fn [[f :as xs] last-seen]
                      (when-let [s (seq xs)]
-                       (if (= seen f)
-                         (recur (rest s) seen)
+                       (if (= last-seen f)
+                         (recur (rest s) last-seen)
                          (cons f (step (rest s) f)))))
                     xs seen)))]
-     (step coll #{}))))
+     (step coll ::unseen))))
