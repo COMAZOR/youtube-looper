@@ -2,7 +2,7 @@
   (:require-macros [cljs.core.async.macros :refer [go]]
                    [wilkerdev.util.macros :refer [dochan]])
   (:require [cljs.core.async :refer [chan put! <! >! close! pipe]]
-            [wilkerdev.util :refer [format]]
+            [wilkerdev.util :refer [format distinct-consecutive]]
             [wilkerdev.util.dom :as dom]))
 
 (defn player-element [video query]
@@ -54,7 +54,7 @@
   (let [in-chan (dom/observe-mutation {:container dom/body
                                        :options   {:childList false :characterData false}}
                                       (chan 1024 (comp (map (fn [_] (or (current-video-id) :yt/no-video)))
-                                                       (distinct))))]
+                                                       (distinct-consecutive))))]
     (put! in-chan :go)
     (pipe in-chan
           c)))
