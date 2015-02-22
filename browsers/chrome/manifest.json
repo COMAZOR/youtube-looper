@@ -1,14 +1,17 @@
 {
   "manifest_version": 2,
   "name": "Youtube Looper",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "AB Loops for youtube videos",
   "permissions": [],
   "default_locale": "en",
   "content_scripts": [
     {
       "matches": ["*://*.youtube.com/*"],
-      "js": ["js/youtube-looper.js"],
+      "js": [
+        "vendor/firebase.js",
+        "js/youtube-looper.js"
+      ],
       "css": ["youtube-looper.css"],
       "all_frames": true
     }
@@ -19,6 +22,7 @@
     "128": "icon128.png"
   },
   "web_accessible_resources": [
+    "js/youtube-looper.js.map",
     "templates/*.html"
   ]
 }

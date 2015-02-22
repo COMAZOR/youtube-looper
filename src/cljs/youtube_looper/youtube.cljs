@@ -3,11 +3,11 @@
                    [wilkerdev.util.macros :refer [dochan]])
   (:require [cljs.core.async :refer [chan put! <! >! close! pipe]]
             [wilkerdev.util :refer [format distinct-consecutive]]
-            [wilkerdev.util.dom :as dom]))
+            [wilkerdev.util.dom :as dom :refer [$]]))
 
 (defn player-element [video query]
   (some-> (dom/ancestor video (dom/query-matcher ".html5-video-player"))
-          (dom/$ query)))
+          ($ query)))
 
 (defn create-player-action-button [& {:keys [class label tabindex html]
                                       :or   {tabindex "6500"}}]
@@ -20,7 +20,7 @@
 
 (defn ensure-number [n] (if (js/isNaN n) 0 n))
 
-(defn update-loop-representation [bar {:keys [start finish]} video-duration]
+(defn update-loop-representation [bar {:keys [loop/start loop/finish]} video-duration]
   (let [start-pct (/ start video-duration)
         size-pct (/ (- finish start) video-duration)]
     (doto bar
@@ -34,7 +34,7 @@
                      :transform "scaleX(0)"})))
 
 (defn item-prop [name]
-  (if-let [node (dom/$ (str "meta[itemprop=" name "]"))]
+  (if-let [node ($ (str "meta[itemprop=" name "]"))]
     (.-content node)))
 
 (defn extract-video-id [watch-url]
@@ -42,7 +42,7 @@
     video-id))
 
 (defn current-video-id-canonical []
-  (some-> (dom/$ "link[rel=canonical]")
+  (some-> ($ "link[rel=canonical]")
           (aget "href")
           (extract-video-id)))
 
@@ -58,3 +58,5 @@
     (put! in-chan :go)
     (pipe in-chan
           c)))
+
+(defn get-video [] ($ "video"))

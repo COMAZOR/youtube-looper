@@ -3,9 +3,15 @@
   (:require [enfocus.core :as ef]
             [enfocus.events :as events]
             [cljs.core.async :refer [put! pipe]]
+            [goog.events :as gevents]
+            [youtube-looper.data :as d]
+            [youtube-looper.youtube :as yt]
             [youtube-looper.util :refer [seconds->time]]
             [wilkerdev.util :refer [mapply]]
+            [wilkerdev.util.dom :as dom :refer [$]]
             [wilkerdev.browsers.chrome :refer [t]]))
+
+; styles
 
 (def blue "#167ac6")
 
@@ -27,40 +33,45 @@
 
 (defn set-style [styles] (mapply ef/set-style styles))
 
-(defn loop-time [{:keys [start finish]}]
+; helpers
+
+(defn pretty-loop-time [{:keys [loop/start loop/finish]}]
   (str (seconds->time start) " - " (seconds->time finish)))
 
 (defn same-loop-time? [loop current-loop]
-  (= (select-keys loop [:start :finish])
-     (select-keys current-loop [:start :finish])))
+  (= (select-keys loop [:loop/start :loop/finish])
+     (select-keys current-loop [:loop/start :loop/finish])))
+
+; templates
 
 (em/defsnippet loop-item :compiled "templates/yt-dialog.html"
   [".ytp-menu-row:first-child"]
-  [{:keys [name] :as loop} {:keys [comm] {:keys [current-loop]} :app-state}]
+  [{:keys [loop/label] :as loop} {:keys [bus db]}]
   [".ytp-menu-title"] (ef/do->
                         (set-style (merge link-style
-                                          (if (same-loop-time? loop current-loop) {:color yellow} {})))
-                        (ef/content name)
-                        (events/listen :click #(put! comm [:rename-loop loop])))
+                                          (if (same-loop-time? loop (d/current-loop db))
+                                            {:color yellow} {})))
+                        (ef/content label)
+                        (events/listen :click #(put! bus [:rename-loop loop])))
   [".ytl-loop-time"] (ef/do->
                        (set-style blue-link-style)
-                       (ef/content (loop-time loop))
-                       (events/listen :click #(put! comm [:select-loop loop])))
+                       (ef/content (pretty-loop-time loop))
+                       (events/listen :click #(put! bus [:select-loop loop])))
   [".ytl-loop-close"] (ef/do->
                         (set-style blue-link-style)
-                        (events/listen :click #(put! comm [:remove-loop loop]))))
+                        (events/listen :click #(put! bus [:remove-loop loop]))))
 
 (em/defsnippet disable-loop-button :compiled "templates/yt-dialog.html"
   [".ytl-loop-disable"]
-  [{:keys [comm]}]
+  [{:keys [bus]}]
   ["a"] (ef/do->
           (ef/content (t "disable_loop"))
           (set-style blue-link-style)
-          (events/listen :click #(put! comm [:select-loop nil]))))
+          (events/listen :click #(put! bus [:select-loop nil]))))
 
 (em/defsnippet new-loop-row :compiled "templates/yt-dialog.html"
   [".ytl-new-loop"]
-  [{:keys [comm app-state video]}]
+  [{:keys [db bus]}]
   [".ytp-menu-title"] (ef/content (t "new_loop"))
 
   ["input"] (ef/do->
@@ -70,25 +81,88 @@
                                          (when (and (.-ctrlKey e)
                                                     (= (.-keyCode e) 3))
                                            (let [target (.-target e)]
-                                             (set! (.-value target) (seconds->time (.-currentTime video)))
-                                             (.dispatchEvent target (js/Event. "input")))))))
+                                             (set! (.-value target) (seconds->time (.-currentTime (yt/get-video))))
+                                             (.dispatchEvent target (js/Event. "input"))))
+                                         (when (= (.-keyCode e) 13)
+                                           (put! bus [:create-loop])))))
 
   ["input[name=start]"] (ef/do->
-                          (ef/set-attr :value (get-in app-state [:new-loop :start]))
-                          (events/listen :input #(put! comm [:update-new-start (.. % -target -value)])))
+                          (ef/set-attr :value (:loop/start (d/new-loop db)))
+                          (events/listen :input #(put! bus [:update-new-start (.. % -target -value)])))
 
   ["input[name=finish]"] (ef/do->
-                           (ef/set-attr :value (get-in app-state [:new-loop :finish]))
-                           (events/listen :input #(put! comm [:update-new-finish (.. % -target -value)])))
+                           (ef/set-attr :value (:loop/finish (d/new-loop db)))
+                           (events/listen :input #(put! bus [:update-new-finish (.. % -target -value)])))
 
   ["a"] (ef/do->
           (set-style blue-link-style)
-          (events/listen :click #(put! comm [:create-new-loop]))))
+          (events/listen :click #(put! bus [:create-loop]))))
 
 (em/deftemplate dialog-template :compiled "templates/yt-dialog.html"
-  [{{:keys [loops current-loop]} :app-state :as looper}]
+  [{:keys [db] :as flux-info}]
   [".ytp-menu-container"] (events/listen :click #(.stopPropagation %))
-  [".ytp-menu-content"] (ef/do->
-                          (ef/content (map loop-item (sort-by :start loops) (repeat looper)))
-                          (ef/append (new-loop-row looper))
-                          (ef/append (if current-loop (disable-loop-button looper)))))
+  [".ytp-menu-content"] (let [current-loop (d/current-loop db)]
+                          (ef/do->
+                            (ef/content (map loop-item (->> (d/loops-for-current-video db)
+                                                            (sort-by :loop/start))
+                                                       (repeat flux-info)))
+                            (ef/append (new-loop-row flux-info))
+                            (ef/append (if current-loop (disable-loop-button flux-info))))))
+
+; other elements
+
+(defn create-looper-action-button []
+  (yt/create-player-action-button :class "ytp-button-ytlooper"
+                                  :label "Youtube Looper"
+                                  :html "AB"))
+
+(defn dialog-el [] ($ ($ ".html5-video-controls") ".ytl-dialog"))
+
+(defn loop-bar []
+  (or ($ ".ytp-ab-looper-progress")
+      (doto (yt/create-loop-bar "ytp-ab-looper-progress")
+        (dom/insert-after! ($ ".ytp-load-progress")))))
+
+(defn looper-action-button []
+  (or ($ ".ytp-button-ytlooper")
+      (doto (create-looper-action-button)
+        (dom/insert-after! ($ ".ytp-settings-button")))))
+
+; render engine
+
+(defn append-or-update! [parent lookup element]
+  (if-let [child ($ parent lookup)]
+    (dom/replace-node! element child)
+    (dom/append! parent element)))
+
+(defn show-dialog [flux-info]
+  (let [dialog (dialog-template flux-info)]
+    (append-or-update! ($ ".html5-video-controls") ".ytl-dialog" dialog)))
+
+(defn render* [{:keys [db bus] :as flux-info}]
+  (let [settings (d/settings db)]
+    (let [video (yt/get-video)]
+      (yt/update-loop-representation (loop-bar) (d/current-loop db) (dom/video-duration video)))
+
+    (when-let [dialog (dialog-el)]
+      (dom/remove-node! dialog)
+      (dom/set-style! (looper-action-button) :color nil))
+
+    (when (:show-dialog? settings)
+      (show-dialog flux-info)
+      (gevents/listenOnce dom/body "click" #(put! bus [:hide-dialog]))
+      (dom/set-style! (looper-action-button) :color "#fff"))))
+
+(defn request-rerender [render-data flux-info]
+  (reset! render-data flux-info))
+
+(defn render [render-data]
+  (when-let [flux-info @render-data]
+    (render* flux-info)
+    (reset! render-data nil)))
+
+(defn init-render-engine []
+  (let [render-data (atom nil)]
+    (add-watch render-data :render (fn [_ _ old-val new-val]
+                                     (when (and (nil? old-val) new-val)
+                                       (js/requestAnimationFrame (partial render render-data)))))))

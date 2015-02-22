@@ -3,6 +3,10 @@
     "message": "Criar novo loop"
   },
 
+  "new_loop_name": {
+    "message": "Nome do novo loop"
+  },
+
   "disable_loop": {
     "message": "Desligar loop"
   },

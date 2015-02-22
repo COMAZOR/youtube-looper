@@ -10,7 +10,6 @@
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
                  [camel-snake-kebab "0.2.4"]
                  [enfocus "2.1.1"]
-                 [org.clojure/core.match "0.3.0-alpha4"]
                  [datascript "0.9.0"]]
 
   :plugins [[lein-cljsbuild "1.0.4"]]
