@@ -54,3 +54,9 @@
 
 (defmacro go-sub [pub key binding & body]
   `(go-sub* ~pub ~key ~binding (cljs.core.async/chan 1) ~@body) )
+
+(defmacro deblog [& body]
+  `(do
+     (let [s# (pr-str '~body)]
+       (.log js/console (subs s# 1 (dec (count s#)))))
+     ~@body))
