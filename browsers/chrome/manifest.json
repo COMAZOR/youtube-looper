@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Youtube Looper",
   "version": "0.4.0",
-  "description": "AB Loops for youtube videos",
+  "description": "Custom loops extension for Youtube videos",
   "permissions": [],
   "default_locale": "en",
   "content_scripts": [
@@ -22,7 +22,6 @@
     "128": "icon128.png"
   },
   "web_accessible_resources": [
-    "js/youtube-looper.js.map",
-    "templates/*.html"
+    "js/youtube-looper.js.map"
   ]
 }
