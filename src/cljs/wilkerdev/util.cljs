@@ -18,17 +18,20 @@
   (apply goog.string/format fmt args))
 
 (defn js->map [obj]
+  "Forces a js->map convertion but only on the first level of nesting."
   (->> (js-keys obj)
        (map #(vector % (aget obj %)))
        (map #(update-in % [0] (comp keyword csk/->kebab-case)))
        (into {})))
 
 (defn map->query [m]
+  "Converts a map into a query string."
   (->> (clj->js m)
        (.createFromMap goog.Uri.QueryData)
        (.toString)))
 
 (defn quote-regexp [string]
+  "Quotes regexp characters from a string, making it suitable to use as literals in Regexp"
   (.replace string (js/RegExp "[-\\^$*+?.()|[\\]{}]" "g") "\\$&"))
 
 (defn distinct-consecutive
