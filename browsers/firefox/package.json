@@ -1,9 +1,9 @@
 {
   "name": "youtube-looper",
-  "title": "youtube-looper",
+  "title": "Youtube Looper",
   "id": "jid1-lS7lahz3um90Mw",
   "description": "Custom loops extension for Youtube videos",
   "author": "Wilker Lúcio",
-  "license": "MIT",
-  "version": "0.1"
+  "license": "Eclipse",
+  "version": "0.4.0"
 }
