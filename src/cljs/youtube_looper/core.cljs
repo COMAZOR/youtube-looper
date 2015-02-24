@@ -2,9 +2,9 @@
   (:require-macros [cljs.core.async.macros :refer [go]]
                    [wilkerdev.util.macros :refer [dochan go-sub go-sub* all-or-nothing]])
   (:require [cljs.core.async :refer [chan put! <! >! close!] :as async]
-            [wilkerdev.browsers.chrome :refer [t]]
             [wilkerdev.util.dom :as dom]
             [wilkerdev.util.reactive :as r]
+            [youtube-looper.browser :refer [t]]
             [youtube-looper.data :as d]
             [youtube-looper.youtube :as yt]
             [youtube-looper.views :as v]))
@@ -46,7 +46,14 @@
         video-id (d/settings db :current-video)]
     (d/sync-loops-for-video! video-id loops)))
 
-(defn init []
+(defn wait-for-presence
+  ([f] (wait-for-presence f 10))
+  ([f delay]
+   (go
+     (while (not (f)) (<! (async/timeout delay)))
+     (f))))
+
+(defn ^:export init []
   (let [conn (d/create-conn)
         bus (chan 1024 (map (partial debug-input "flux message")))
         pub (async/pub bus first)
@@ -61,8 +68,13 @@
                 bus)
 
     (go-sub* pub :video-load _ (chan 1 (take 1))
+      ; on Firefox even after the video load is detected the video sometimes takes
+      ; a little longer to be available
+      (<! (wait-for-presence yt/get-video))
+
       (setup-video-time-update bus)
-      (async/pipe (r/listen (v/looper-action-button) "click" (constantly-chan [:invoke-looper])) bus))
+      (async/pipe (r/listen (v/looper-action-button) "click" (constantly-chan [:invoke-looper])) bus)
+      (d/update-settings! conn {:ready? true}))
 
     (go-sub* pub :video-load [_ video-id] (chan 1 (distinct))
       (d/load-loops! conn (d/loops-for-video-on-storage video-id)))
@@ -108,5 +120,3 @@
       (d/update-new-loop! conn {:loop/finish value}))
 
     looper))
-
-(def ^:export app (init))

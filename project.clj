@@ -14,14 +14,20 @@
 
   :plugins [[lein-cljsbuild "1.0.4"]]
 
-  :cljsbuild {:builds {:dev     {:source-paths ["src/cljs"]
-                                 :compiler     {:output-to     "browsers/chrome/js/youtube-looper.js"
-                                                :optimizations :whitespace
-                                                :pretty-print  true}}
-                       :release {:source-paths ["src/cljs"]
-                                 :compiler     {:output-to     "browsers/chrome/js/youtube-looper.js"
-                                                :output-dir    "browsers/chrome/js"
-                                                :optimizations :advanced
-                                                :pretty-print  false
-                                                :externs       ["externs/chrome_extensions.js"]
-                                                :source-map    "browsers/chrome/js/youtube-looper.js.map"}}}})
+  :cljsbuild {:builds {:chrome-dev  {:source-paths ["src/cljs" "src/cljs-chrome"]
+                                     :compiler     {:output-to     "browsers/chrome/js/youtube-looper.js"
+                                                    :optimizations :whitespace
+                                                    :pretty-print  true}}
+
+                       :firefox-dev {:source-paths ["src/cljs" "src/cljs-firefox"]
+                                     :compiler     {:output-to     "browsers/firefox/data/js/youtube-looper.js"
+                                                    :optimizations :whitespace
+                                                    :pretty-print  true}}
+
+                       :release-chrome {:source-paths ["src/cljs"]
+                                     :compiler     {:output-to     "browsers/chrome/js/youtube-looper.js"
+                                                    :output-dir    "browsers/chrome/js"
+                                                    :optimizations :advanced
+                                                    :pretty-print  false
+                                                    :externs       ["externs/chrome_extensions.js"]
+                                                    :source-map    "browsers/chrome/js/youtube-looper.js.map"}}}})

@@ -2,8 +2,8 @@
   (:require-macros [wilkerdev.util.macros :refer [all-or-nothing]])
   (:require [datascript :as d]
             [clojure.set :refer [rename-keys]]
+            [youtube-looper.browser :refer [t]]
             [youtube-looper.util :refer [parse-time]]
-            [wilkerdev.browsers.chrome :refer [t]]
             [wilkerdev.util.datascript :as dh]
             [wilkerdev.local-storage :as store]))
 
@@ -24,9 +24,10 @@
    ; settings
    :current-video {}
    :show-dialog?  {}
+   :ready?        {}
    :current-loop  {:db/valueType :db.type/ref}})
 
-(def initial-settings {:show-dialog? false})
+(def initial-settings {:show-dialog? false :ready? false})
 
 (defn create-conn
   ([] (create-conn initial-settings))

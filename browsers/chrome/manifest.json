@@ -9,7 +9,8 @@
     {
       "matches": ["*://*.youtube.com/*"],
       "js": [
-        "js/youtube-looper.js"
+        "js/youtube-looper.js",
+        "init.js"
       ],
       "css": ["youtube-looper.css"],
       "all_frames": true

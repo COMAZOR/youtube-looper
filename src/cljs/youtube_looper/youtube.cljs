@@ -5,10 +5,6 @@
             [wilkerdev.util :refer [format distinct-consecutive]]
             [wilkerdev.util.dom :as dom :refer [$]]))
 
-(defn player-element [video query]
-  (some-> (dom/ancestor video (dom/query-matcher ".html5-video-player"))
-          ($ query)))
-
 (defn create-player-action-button [& {:keys [class label tabindex html]
                                       :or   {tabindex "6500"}}]
   (doto (dom/create-element! "div")

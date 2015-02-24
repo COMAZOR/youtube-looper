@@ -4,12 +4,12 @@
             [enfocus.events :as events]
             [cljs.core.async :refer [put! pipe]]
             [goog.events :as gevents]
+            [youtube-looper.browser :refer [t]]
             [youtube-looper.data :as d]
             [youtube-looper.youtube :as yt]
             [youtube-looper.util :refer [seconds->time]]
             [wilkerdev.util :refer [mapply]]
-            [wilkerdev.util.dom :as dom :refer [$]]
-            [wilkerdev.browsers.chrome :refer [t]]))
+            [wilkerdev.util.dom :as dom :refer [$]]))
 
 ; styles
 
@@ -140,18 +140,19 @@
     (append-or-update! ($ ".html5-video-controls") ".ytl-dialog" dialog)))
 
 (defn render* [{:keys [db bus] :as flux-info}]
-  (let [settings (d/settings db)]
-    (let [video (yt/get-video)]
-      (yt/update-loop-representation (loop-bar) (d/current-loop db) (dom/video-duration video)))
+  (let [{:keys [ready? show-dialog?]} (d/settings db)]
+    (when ready?
+      (let [video (yt/get-video)]
+        (yt/update-loop-representation (loop-bar) (d/current-loop db) (dom/video-duration video)))
 
-    (when-let [dialog (dialog-el)]
-      (dom/remove-node! dialog)
-      (dom/set-style! (looper-action-button) :color nil))
+      (when-let [dialog (dialog-el)]
+        (dom/remove-node! dialog)
+        (dom/set-style! (looper-action-button) :color nil))
 
-    (when (:show-dialog? settings)
-      (show-dialog flux-info)
-      (gevents/listenOnce dom/body "click" #(put! bus [:hide-dialog]))
-      (dom/set-style! (looper-action-button) :color "#fff"))))
+      (when show-dialog?
+        (show-dialog flux-info)
+        (gevents/listenOnce dom/body "click" #(put! bus [:hide-dialog]))
+        (dom/set-style! (looper-action-button) :color "#fff")))))
 
 (defn request-rerender [render-data flux-info]
   (reset! render-data flux-info))
