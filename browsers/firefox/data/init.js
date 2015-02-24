@@ -8,5 +8,8 @@ goog.async.nextTick.getSetImmediateEmulator_ = function() {
   };
 };
 
-// boot the extension
-youtube_looper.core.init();
+// first load the translation info from the background
+youtube_looper.browser.load_translations(function() {
+  // then boot the looper
+  youtube_looper.core.init();
+});
