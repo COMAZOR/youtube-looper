@@ -38,7 +38,8 @@
                       (if (should-render? tx-report)
                         (v/request-rerender render-engine
                                             {:db  (:db-after tx-report)
-                                             :bus bus}))))))
+                                             :bus bus}))))
+    render-engine))
 
 (defn sync-loops! [db]
   (let [loops (->> (d/loops-for-current-video db)
@@ -57,15 +58,17 @@
   (let [conn (d/create-conn)
         bus (chan 1024 (map (partial debug-input "flux message")))
         pub (async/pub bus first)
-        looper {:conn conn :bus bus :pub pub}]
-
-    (setup-render-engine looper)
+        looper {:conn conn :bus bus :pub pub}
+        render-engine (setup-render-engine looper)]
 
     ; watch for video page changes
     (async/pipe (yt/watch-video-load
                   (chan 1024 (comp (filter #(not= % :yt/no-video))
                                    (map #(vector :video-load %)))))
                 bus)
+
+    (go-sub pub :request-rerender _
+      (v/request-rerender render-engine {:db @conn :bus bus}))
 
     (go-sub* pub :video-load _ (chan 1 (take 1))
       ; on Firefox even after the video load is detected the video sometimes takes
@@ -113,10 +116,10 @@
       (d/remove-loop! conn loop)
       (sync-loops! @conn))
 
-    (go-sub pub :update-new-start [_ value]
-      (d/update-new-loop! conn {:loop/start value}))
+    (go-sub pub :update-new-start [_ val]
+      (d/update-new-loop! conn {:loop/start val}))
 
-    (go-sub pub :update-new-finish [_ value]
-      (d/update-new-loop! conn {:loop/finish value}))
+    (go-sub pub :update-new-finish [_ val]
+      (d/update-new-loop! conn {:loop/finish val}))
 
     looper))
