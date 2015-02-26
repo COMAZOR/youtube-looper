@@ -1,0 +1,4 @@
+#!/bin/bash
+
+rm -rf browsers/safari/youtube-looper.safariextension/js
+lein cljsbuild once release-safari
