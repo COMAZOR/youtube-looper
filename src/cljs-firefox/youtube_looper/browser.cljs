@@ -1,6 +1,4 @@
-(ns youtube-looper.browser
-  (:require-macros [wilkerdev.util.macros :refer [go-sub*]])
-  (:require [cljs.core.async :refer [chan put!]]))
+(ns youtube-looper.browser)
 
 (def translation-cache (atom {}))
 
