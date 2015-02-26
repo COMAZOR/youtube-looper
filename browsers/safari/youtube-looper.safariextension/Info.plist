@@ -15,7 +15,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>0.4</string>
 	<key>CFBundleVersion</key>
-	<string>1</string>
+	<string>0.4</string>
 	<key>Chrome</key>
 	<dict/>
 	<key>Content</key>
@@ -53,6 +53,8 @@
 			<string>Some</string>
 		</dict>
 	</dict>
+	<key>Update Manifest URL</key>
+	<string>https://s3-sa-east-1.amazonaws.com/youtube-looper/update-manifest.plist</string>
 	<key>Website</key>
 	<string>https://github.com/wilkerlucio/youtube-looper</string>
 </dict>

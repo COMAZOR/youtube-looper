@@ -6,15 +6,15 @@
    <array>
      <dict>
        <key>CFBundleIdentifier</key>
-       <string>com.yourCompany.safari.yourExtensionName</string>
+       <string>com.wilker-dev.youtube-looper</string>
        <key>Developer Identifier</key>
        <string>YourCertificateID</string>
        <key>CFBundleVersion</key>
-       <string>Your current bundle version</string>
+       <string>0.4</string>
        <key>CFBundleShortVersionString</key>
-       <string>Your current display version</string>
+       <string>0.4</string>
        <key>URL</key>
-       <string>Your-.safariextz-URL</string>
+       <string>https://s3-sa-east-1.amazonaws.com/youtube-looper/youtube-looper.safariextz</string>
      </dict>
    </array>
 </dict>
