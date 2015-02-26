@@ -9,6 +9,12 @@
             [youtube-looper.youtube :as yt]
             [youtube-looper.views :as v]))
 
+(def ^:dynamic *log-debug* false)
+
+(defn log [& args]
+  (if *log-debug*
+    (apply (.. js/console -log) args)))
+
 (defn constantly-chan [value] (chan 1 (map (constantly value))))
 
 (defn loop-back [video {:keys [loop/start loop/finish]}]
@@ -19,7 +25,7 @@
 (defn debug-input [label [msg :as i]]
   (let [ignored-messages #{:time-update}]
     (if-not (contains? ignored-messages msg)
-      (.log js/console label (pr-str i))))
+      (log label (pr-str i))))
   i)
 
 (defn setup-video-time-update [bus]
