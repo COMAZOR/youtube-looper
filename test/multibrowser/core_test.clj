@@ -46,7 +46,7 @@
                           :translations {:first  "One" :second "Two"}}))))
 
 (deftest test-safari-locale
-  (is (= [{:target  "browsers/safari/youtube-looper.safariextension/locale/en-US.edn"
+  (is (= [{:target  "browsers/safari/youtube-looper.safariextension/locale/en-us.edn"
            :content "{:second \"Two\", :first \"One\"}"}]
          (safari-locale {:language     {:raw      "en-US"
                                          :country  "US"
@@ -68,7 +68,7 @@
           {:content "module.exports = [\"second\",\"first\"];"
            :target  "browsers/firefox/lib/l10n-keys.js"}
           {:content "{:second \"Two\", :first \"One\"}"
-           :target  "browsers/safari/youtube-looper.safariextension/locale/en-US.edn"}]
+           :target  "browsers/safari/youtube-looper.safariextension/locale/en-us.edn"}]
          (expand-translations [{:translations {:first  "One" :second "Two"}
                                 :language     {:raw "en-US" :language "en" :country "US"}}])))
 

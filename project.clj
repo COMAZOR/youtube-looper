@@ -11,7 +11,8 @@
                  [camel-snake-kebab "0.2.4"]
                  [enfocus "2.1.1"]
                  [datascript "0.9.0"]
-                 [me.raynes/fs "1.4.6"]]
+                 [me.raynes/fs "1.4.6"]
+                 [cljs-ajax "0.3.10"]]
 
   :plugins [[lein-cljsbuild "1.0.4"]]
 

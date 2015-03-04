@@ -3,8 +3,7 @@
             [clojure.data.json :as json]
             [clojure.edn :as edn]
             [clojure.string :as str]
-            [me.raynes.fs :as fs])
-  )
+            [me.raynes.fs :as fs]))
 
 (def ^:dynamic *supported-browsers* [:chrome :firefox :safari])
 
@@ -55,7 +54,7 @@
 
 (defn safari-locale [{:keys [language translations]}]
   [{:target  (format "browsers/safari/youtube-looper.safariextension/locale/%s.edn"
-                     (:raw language))
+                     (str/lower-case (:raw language)))
     :content (pr-str translations)}])
 
 (defmulti translate :browser)
