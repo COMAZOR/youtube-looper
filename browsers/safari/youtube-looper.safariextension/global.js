@@ -13,8 +13,6 @@ var request = function(url, callback) {
   req.send(null);
 };
 
-var localeCache = {};
-
 var loadLanguage = function (name, callback) {
   var url = BASE_URI + "locale/" + name + ".edn";
 
@@ -27,8 +25,21 @@ var loadLanguage = function (name, callback) {
   });
 };
 
+var localeCache = {};
+
+var loadLanguageCached = function (name, callback) {
+  if (localeCache[name]) {
+    callback(localeCache[name]);
+  } else {
+    loadLanguage(name, function (value) {
+      localeCache[name] = value;
+      callback(value);
+    });
+  }
+};
+
 safari.application.addEventListener("message", function (event) {
-  loadLanguage(CURRENT_LANGUAGE, function (languageData) {
+  loadLanguageCached(CURRENT_LANGUAGE, function (languageData) {
     event.target.page.dispatchMessage("localeData", languageData);
   });
 }, false);
