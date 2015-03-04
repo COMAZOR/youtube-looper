@@ -1,0 +1,3 @@
+#!/bin/bash
+
+cfx run --binary-args '-url "https://www.youtube.com/watch?v=VN_rs8DNMX0" -jsconsole'

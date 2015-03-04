@@ -1,17 +1,1 @@
-{
-  "new_loop": {
-    "message": "Criar novo loop"
-  },
-
-  "new_loop_name": {
-    "message": "Nome do novo loop"
-  },
-
-  "disable_loop": {
-    "message": "Desligar loop"
-  },
-
-  "unnamed_section": {
-    "message": "Seção sem nome"
-  }
-}
+{"new_loop":{"message":"Criar novo loop"},"new_loop_name":{"message":"Nome do novo loop"},"disable_loop":{"message":"Desligar loop"},"unnamed_section":{"message":"Se\u00e7\u00e3o sem nome"}}

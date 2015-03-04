@@ -2,7 +2,7 @@ var pageMod = require("sdk/page-mod");
 var self = require("sdk/self");
 var l10n = require("sdk/l10n");
 
-var L10N_KEYS = ["new_loop", "new_loop_name", "disable_loop", "unnamed_section"];
+var L10N_KEYS = require("./l10n-keys");
 
 function translationService(worker) {
   worker.port.on("locale", function () {
