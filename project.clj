@@ -37,12 +37,4 @@
                                                       :optimizations :advanced
                                                       :pretty-print  false
                                                       :externs       ["externs/chrome_extensions.js"]
-                                                      :source-map    "browsers/chrome/js/youtube-looper.js.map"}}
-
-                       :safari-release {:source-paths ["src/cljs" "src/cljs-safari"]
-                                        :compiler     {:output-to     "browsers/safari/youtube-looper.safariextension/js/youtube-looper.js"
-                                                       :output-dir    "browsers/safari/youtube-looper.safariextension/js"
-                                                       :optimizations :advanced
-                                                       :pretty-print  false
-                                                       :externs       ["externs/chrome_extensions.js"]
-                                                       :source-map    "browsers/safari/youtube-looper.safariextension/js/youtube-looper.js.map"}}}})
+                                                      :source-map    "browsers/chrome/js/youtube-looper.js.map"}}}})
