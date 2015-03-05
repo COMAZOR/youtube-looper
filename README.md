@@ -6,8 +6,7 @@ You can install the extension from [this page on the Chrome Web Store](https://c
 
 The Firefox version is currently waiting for approval at Mozilla Addons.
 
-The Safari version still on development (it's currently missing i18n features), and will
-be released when this part is ready.
+The Safari version can be download from [this link](https://s3-sa-east-1.amazonaws.com/youtube-looper/youtube-looper.safariextz). It's also awaiting for approval on the Safari Extension Gallery.
 
 ## Building it
 
@@ -20,11 +19,10 @@ lein cljsbuild auto safari-dev
 lein cljsbuild auto chrome-dev
 ```
 
-Scripts for release builds are also available (except for Firefox currently):
+Scripts for release builds are also available (only working for Chrome currently):
 
 ```
 lein cljsbuild once chrome-release
-lein cljsbuild once safari-release
 ```
 
 Each build outputs the compiled sources at the correct browser package, you can find
