@@ -64,12 +64,12 @@
 (defmethod translate :safari [t] (safari-locale t))
 
 (defn expand-translations [translations]
-  (let [transforms (for [browser *supported-browsers*
-                         translation translations]
-                     (-> (assoc translation :browser browser)
-                         (translate)))]
-    (->> (apply concat transforms)
-         (distinct))))
+  (->> (for [browser *supported-browsers*
+             translation translations]
+         (-> (assoc translation :browser browser)
+             (translate)))
+       (apply concat)
+       (distinct)))
 
 (defn store! [{:keys [target content]}]
   (let [f (fs/file target)]
