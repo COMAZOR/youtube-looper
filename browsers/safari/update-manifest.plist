@@ -10,9 +10,9 @@
        <key>Developer Identifier</key>
        <string>6T7U3QR5G9</string>
        <key>CFBundleVersion</key>
-       <string>0.4</string>
+       <string>0.5.0</string>
        <key>CFBundleShortVersionString</key>
-       <string>0.4</string>
+       <string>0.5.0</string>
        <key>URL</key>
        <string>https://s3-sa-east-1.amazonaws.com/youtube-looper/youtube-looper.safariextz</string>
      </dict>
