@@ -1,4 +1,7 @@
-{:new_loop        "Criar novo loop"
- :new_loop_name   "Nome do novo loop"
- :disable_loop    "Desligar loop"
- :unnamed_section "Seção sem nome"}
+{:new_loop            "Criar novo loop"
+ :new_loop_name       "Nome do novo loop"
+ :disable_loop        "Desligar loop"
+ :unnamed_section     "Seção sem nome"
+ :set_playback_rate   "Definir velocidade de andamento"
+ :input_playback_rate "Digite a nova velocidade de andamento (ex: 0.6)"
+ :invalid_number      "Número inválido, tente novamente"}

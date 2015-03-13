@@ -1,1 +1,1 @@
-{"new_loop":{"message":"Create a new loop"},"new_loop_name":{"message":"New loop name"},"disable_loop":{"message":"Disable loop"},"unnamed_section":{"message":"Unnamed section"}}
+{"new_loop":{"message":"Create a new loop"},"new_loop_name":{"message":"New loop name"},"disable_loop":{"message":"Disable loop"},"unnamed_section":{"message":"Unnamed section"},"set_playback_rate":{"message":"Set playback rate"},"input_playback_rate":{"message":"Set the new playback rate (eg: 0.6)"},"invalid_number":{"message":"Input number is invalid, please try again"}}

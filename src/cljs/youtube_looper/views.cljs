@@ -69,6 +69,23 @@
           (set-style blue-link-style)
           (events/listen :click #(put! bus [:select-loop nil]))))
 
+(defn pick-double []
+  (loop []
+    (let [time (js/prompt (t "input_playback_rate"))]
+      (cond
+        (nil? time) nil
+        (re-find #"^\d+(?:\.\d+)?$" time) (js/parseFloat time)
+        :else (do (js/alert (t "invalid_number")) (recur))))))
+
+(em/defsnippet playbackrate-button :compiled "templates/yt-dialog.html"
+  [".ytl-loop-playbackrate"]
+  [{:keys [bus]}]
+  ["a"] (ef/do->
+          (ef/content (t "set_playback_rate"))
+          (set-style blue-link-style)
+          (events/listen :click #(if-let [new-rate (pick-double)]
+                                  (put! bus [:set-playback-rate new-rate])))))
+
 (em/defsnippet new-loop-row :compiled "templates/yt-dialog.html"
   [".ytl-new-loop"]
   [{:keys [db bus]}]
@@ -107,6 +124,7 @@
                                                             (sort-by :loop/start))
                                                        (repeat flux-info)))
                             (ef/append (new-loop-row flux-info))
+                            (ef/append (playbackrate-button flux-info))
                             (ef/append (if current-loop (disable-loop-button flux-info))))))
 
 ; other elements

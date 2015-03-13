@@ -1,4 +1,7 @@
-{:new_loop        "Create a new loop"
- :new_loop_name   "New loop name"
- :disable_loop    "Disable loop"
- :unnamed_section "Unnamed section"}
+{:new_loop            "Create a new loop"
+ :new_loop_name       "New loop name"
+ :disable_loop        "Disable loop"
+ :unnamed_section     "Unnamed section"
+ :set_playback_rate   "Set playback rate"
+ :input_playback_rate "Set the new playback rate (eg: 0.6)"
+ :invalid_number      "Input number is invalid, please try again"}

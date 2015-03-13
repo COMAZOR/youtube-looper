@@ -6,12 +6,13 @@
   :source-paths ["src/clj" "src/cljs"]
 
   :dependencies [[org.clojure/clojure "1.7.0-alpha5"]
+                 [me.raynes/fs "1.4.6"]
+
                  [org.clojure/clojurescript "0.0-3058"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
                  [camel-snake-kebab "0.2.4"]
                  [enfocus "2.1.1"]
                  [datascript "0.9.0"]
-                 [me.raynes/fs "1.4.6"]
                  [cljs-ajax "0.3.10"]]
 
   :plugins [[lein-cljsbuild "1.0.4"]]

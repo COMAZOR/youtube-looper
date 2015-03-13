@@ -128,4 +128,7 @@
     (go-sub pub :update-new-finish [_ val]
       (d/update-new-loop! conn {:loop/finish val}))
 
+    (go-sub pub :set-playback-rate [_ rate]
+      (dom/video-playback-rate! (yt/get-video) rate))
+
     looper))

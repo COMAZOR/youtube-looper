@@ -132,3 +132,4 @@
 (defn video-current-time [video] (.-currentTime video))
 (defn video-duration [video] (.-duration video))
 (defn video-seek! [video time] (set! (.-currentTime video) time))
+(defn video-playback-rate! [video rate] (set! (.-playbackRate video) rate))
