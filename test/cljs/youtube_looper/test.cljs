@@ -1,6 +1,7 @@
 (ns youtube-looper.test
   (:require [figwheel.client :as fw]
-            [youtube-looper.data-test]))
+            [youtube-looper.data-test]
+            [youtube-looper.util-test]))
 
 (enable-console-print!)
 
