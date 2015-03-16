@@ -146,8 +146,6 @@
       (doto (create-looper-action-button)
         (dom/insert-after! ($ ".ytp-settings-button")))))
 
-; render engine
-
 (defn append-or-update! [parent lookup element]
   (if-let [child ($ parent lookup)]
     (dom/replace-node! element child)
@@ -156,6 +154,8 @@
 (defn show-dialog [flux-info]
   (let [dialog (dialog-template flux-info)]
     (append-or-update! ($ ".html5-video-controls") ".ytl-dialog" dialog)))
+
+; render engine
 
 (defn render* [{:keys [db bus] :as flux-info}]
   (let [{:keys [ready? show-dialog?]} (d/settings db)]
