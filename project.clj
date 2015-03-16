@@ -4,6 +4,7 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :source-paths ["src/clj" "src/cljs"]
+  :test-paths ["test/clj" "test/cljs"]
 
   :dependencies [[org.clojure/clojure "1.7.0-alpha5"]
                  [me.raynes/fs "1.4.6"]
@@ -15,7 +16,13 @@
                  [datascript "0.9.0"]
                  [cljs-ajax "0.3.10"]]
 
-  :plugins [[lein-cljsbuild "1.0.4"]]
+  :profiles {:dev {:dependencies [[com.cemerick/clojurescript.test "0.3.3"]
+                                  [figwheel "0.2.5-SNAPSHOT"]]
+
+                   :plugins [[lein-cljsbuild "1.0.4"]
+                             [com.cemerick/clojurescript.test "0.3.3"]
+                             [lein-figwheel "0.2.5-SNAPSHOT"]]}}
+
 
   :cljsbuild {:builds {:chrome-dev  {:source-paths ["src/cljs" "src/cljs-chrome"]
                                      :compiler     {:output-to     "browsers/chrome/js/youtube-looper.js"
@@ -32,10 +39,32 @@
                                                     :optimizations :whitespace
                                                     :pretty-print  true}}
 
+                       :test {:source-paths ["src/cljs" "test/cljs"]
+                              :compiler     {:output-to     "out/test/youtube-looper-test.js"
+                                             :optimizations :whitespace
+                                             :pretty-print  true}}
+
+                       :test-repl {:source-paths ["src/cljs" "test/cljs"]
+                                   :compiler     {:output-to            "resources/repl/js/youtube-looper-test.js"
+                                                  :output-dir           "resources/repl/js/out"
+                                                  :optimizations        :none
+                                                  :main                 youtube-looper.test
+                                                  :asset-path           "js/out"
+                                                  :source-map           true
+                                                  :source-map-timestamp true
+                                                  :cache-analysis       true}}
+
                        :chrome-release {:source-paths ["src/cljs" "src/cljs-chrome"]
                                        :compiler     {:output-to     "browsers/chrome/js/youtube-looper.js"
                                                       :output-dir    "browsers/chrome/js"
                                                       :optimizations :advanced
                                                       :pretty-print  false
                                                       :externs       ["externs/chrome_extensions.js"]
-                                                      :source-map    "browsers/chrome/js/youtube-looper.js.map"}}}})
+                                                      :source-map    "browsers/chrome/js/youtube-looper.js.map"}}}
+              :test-commands {"unit-test" ["slimerjs" :runner "out/test/youtube-looper-test.js"]}}
+
+  :figwheel {:http-server-root "repl" ;; default and assumes "resources"
+             :server-port 3449 ;; default
+
+             ;; Start an nREPL server into the running figwheel process
+             :nrepl-port 7888})

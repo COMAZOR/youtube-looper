@@ -13,7 +13,8 @@
        (js/parseFloat seconds))))
 
 (defn parse-time [time]
-  (cond
-    (nil? time) nil
-    (re-find #"^(\d{1,2}):(\d{1,2}(?:\.\d+)?)$" time) (time->seconds time)
-    (re-find #"^\d+(?:\.\d+)?$" time) (js/parseFloat time)))
+  (let [time (str time)]
+    (cond
+      (nil? time) nil
+      (re-find #"^(\d{1,2}):(\d{1,2}(?:\.\d+)?)$" time) (time->seconds time)
+      (re-find #"^\d+(?:\.\d+)?$" time) (js/parseFloat time))))
