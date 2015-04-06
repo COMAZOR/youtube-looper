@@ -6,7 +6,7 @@ You can install the extension from [this page on the Chrome Web Store](https://c
 
 The Firefox version is currently waiting for approval at Mozilla Addons.
 
-The Safari version can [find here](https://extensions.apple.com/details/?id=com.wilker-dev.youtube-looper-6T7U3QR5G9).
+The Safari version can be [found here](https://extensions.apple.com/details/?id=com.wilker-dev.youtube-looper-6T7U3QR5G9).
 
 ## Building it
 
