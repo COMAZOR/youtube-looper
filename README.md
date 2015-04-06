@@ -6,7 +6,7 @@ You can install the extension from [this page on the Chrome Web Store](https://c
 
 The Firefox version is currently waiting for approval at Mozilla Addons.
 
-The Safari version can be download from [this link](https://s3-sa-east-1.amazonaws.com/youtube-looper/youtube-looper.safariextz). It's also awaiting for approval on the Safari Extension Gallery.
+The Safari version can [find here](https://extensions.apple.com/details/?id=com.wilker-dev.youtube-looper-6T7U3QR5G9).
 
 ## Building it
 
