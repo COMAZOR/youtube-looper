@@ -4,6 +4,12 @@
 var Parse = {};
 
 /**
+ * @param {string} appId
+ * @param {string} jsKey
+ */
+Parse.initialize = function(appId, jsKey) {};
+
+/**
  * @const
  */
 Parse.Analytics = {};

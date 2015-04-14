@@ -6,10 +6,10 @@
   :source-paths ["src/clj" "src/cljs"]
   :test-paths ["test/clj" "test/cljs"]
 
-  :dependencies [[org.clojure/clojure "1.7.0-alpha5"]
+  :dependencies [[org.clojure/clojure "1.7.0-beta1"]
                  [me.raynes/fs "1.4.6"]
 
-                 [org.clojure/clojurescript "0.0-3058"]
+                 [org.clojure/clojurescript "0.0-3196"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
                  [camel-snake-kebab "0.2.4"]
                  [enfocus "2.1.1"]
@@ -59,7 +59,8 @@
                                                       :output-dir    "browsers/chrome/js"
                                                       :optimizations :advanced
                                                       :pretty-print  false
-                                                      :externs       ["externs/chrome_extensions.js"]
+                                                      :externs       ["externs/chrome_extensions.js"
+                                                                      "externs/parse.js"]
                                                       :source-map    "browsers/chrome/js/youtube-looper.js.map"}}}
               :test-commands {"unit-test" ["slimerjs" :runner "out/test/youtube-looper-test.js"]}}
 
