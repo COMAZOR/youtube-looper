@@ -7,7 +7,8 @@
             [youtube-looper.browser :refer [t]]
             [youtube-looper.data :as d]
             [youtube-looper.youtube :as yt]
-            [youtube-looper.views :as v]))
+            [youtube-looper.views :as v]
+            [youtube-looper.track :as track]))
 
 (def ^:dynamic *log-debug* false)
 
@@ -61,6 +62,7 @@
      (f))))
 
 (defn ^:export init []
+  (track/initialize "55eGVmS7Ty7Sa4cLxwpKL235My8elBtQBOk4wx1R" "ghUQSvjYReHqwNhdOROgzI3xm0aybyarCXW30usM")
   (let [conn (d/create-conn)
         bus (chan 1024 (map (partial debug-input "flux message")))
         pub (async/pub bus first)
@@ -80,12 +82,14 @@
       ; on Firefox even after the video load is detected the video sometimes takes
       ; a little longer to be available
       (<! (wait-for-presence yt/get-video))
+      (track/track-extension-loaded)
 
       (setup-video-time-update bus)
       (async/pipe (r/listen (v/looper-action-button) "click" (constantly-chan [:invoke-looper])) bus)
       (d/update-settings! conn {:ready? true}))
 
     (go-sub* pub :video-load [_ video-id] (chan 1 (distinct))
+      (track/track-video-load video-id)
       (d/load-loops! conn (d/loops-for-video-on-storage video-id)))
 
     (go-sub pub :video-load [_ video-id]
@@ -107,18 +111,22 @@
 
     (go-sub pub :select-loop [_ loop]
       (d/select-loop! conn loop)
+      (if loop (track/track-loop-selected) (track/track-loop-disabled))
       (if loop (dom/video-seek! (yt/get-video) (:loop/start loop))))
 
     (go-sub pub :create-loop _
+      (track/track-loop-created)
       (d/create-from-new-loop! conn)
       (sync-loops! @conn))
 
     (go-sub pub :rename-loop [_ loop]
       (when-let [new-label (js/prompt (t "new_loop_name") (:loop/label loop))]
+        (track/track-loop-renamed)
         (d/rename-loop! conn loop new-label))
       (sync-loops! @conn))
 
     (go-sub pub :remove-loop [_ loop]
+      (track/track-loop-removed)
       (d/remove-loop! conn loop)
       (sync-loops! @conn))
 
@@ -129,6 +137,7 @@
       (d/update-new-loop! conn {:loop/finish val}))
 
     (go-sub pub :set-playback-rate [_ rate]
+      (track/track-playback-rate-changed rate)
       (dom/video-playback-rate! (yt/get-video) rate))
 
     looper))
