@@ -110,3 +110,9 @@
     (if (empty? loops)
       (store/remove! key)
       (store/set! key loops))))
+
+(defn export-data []
+  (into {}
+        (for [key (->> (js-keys store/local-storage)
+                       (filter (partial re-find #"^video-loops-")))]
+          [key (store/get key)])))

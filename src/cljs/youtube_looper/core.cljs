@@ -140,4 +140,7 @@
       (track/track-playback-rate-changed rate)
       (dom/video-playback-rate! (yt/get-video) rate))
 
+    (go-sub pub :export-data _
+      (.log js/console (d/export-data)))
+
     looper))
