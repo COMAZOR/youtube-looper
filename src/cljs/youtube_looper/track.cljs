@@ -36,4 +36,4 @@
 (defn track-loop-created [] (track "loop-created"))
 (defn track-loop-renamed [] (track "loop-renamed"))
 (defn track-loop-removed [] (track "loop-removed"))
-(defn track-playback-rate-changed [rate] (track "playback-rate-changed" {:playback-rate rate}))
+(defn track-playback-rate-changed [rate] (track "playback-rate-changed" {:playback-rate (str rate)}))
