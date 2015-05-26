@@ -15,12 +15,10 @@
                  [datascript "0.9.0"]
                  [cljs-ajax "0.3.10"]]
 
-  :profiles {:dev {:dependencies [[com.cemerick/clojurescript.test "0.3.3"]
-                                  [figwheel "0.2.5-SNAPSHOT"]]
+  :profiles {:dev {:dependencies [[figwheel "0.3.3"]]
 
                    :plugins [[lein-cljsbuild "1.0.4"]
-                             [com.cemerick/clojurescript.test "0.3.3"]
-                             [lein-figwheel "0.2.5-SNAPSHOT"]]}}
+                             [lein-figwheel "0.3.3"]]}}
 
 
   :cljsbuild {:builds {:chrome-dev  {:source-paths ["src/cljs" "src/cljs-chrome"]
@@ -50,7 +48,7 @@
                                                   :main                 youtube-looper.test
                                                   :asset-path           "js/out"
                                                   :source-map           true
-                                                  :source-map-timestamp true
+                                                  ;; :source-map-timestamp true
                                                   :cache-analysis       true}}
 
                        :chrome-release {:source-paths ["src/cljs" "src/cljs-chrome"]

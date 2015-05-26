@@ -1,7 +1,5 @@
 (ns youtube-looper.util-test
-  (:require-macros [cemerick.cljs.test
-                    :refer (is deftest with-test testing test-var)])
-  (:require [cemerick.cljs.test :as t]
+  (:require [cljs.test :refer-macros [is are deftest run-tests async]]
             [youtube-looper.util :as u]))
 
 (deftest test-seconds->time
@@ -20,5 +18,3 @@
   (is (= (u/parse-time "90.10") 90.10))
   (is (= (u/parse-time "1:30") 90))
   (is (= (u/parse-time "1:30.10") 90.10)))
-
-(t/test-ns 'youtube-looper.util-test)

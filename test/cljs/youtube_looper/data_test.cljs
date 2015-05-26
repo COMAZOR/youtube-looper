@@ -1,7 +1,5 @@
 (ns youtube-looper.data-test
-  (:require-macros [cemerick.cljs.test
-                    :refer (is deftest with-test testing test-var)])
-  (:require [cemerick.cljs.test :as t]
+  (:require [cljs.test :refer-macros [is are deftest run-tests async]]
             [youtube-looper.data :as d]))
 
 (deftest test-normalize-new-loop
@@ -30,5 +28,3 @@
               :loop/finish 50
               :loop/label "unnamed_section"
               :loop/video 5})))))
-
-(t/test-ns 'youtube-looper.data-test)
