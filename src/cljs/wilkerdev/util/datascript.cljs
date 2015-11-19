@@ -1,5 +1,5 @@
 (ns wilkerdev.util.datascript
-  (:require [datascript :as d]))
+  (:require [datascript.core :as d]))
 
 (def ^:dynamic *debug-q* false)
 

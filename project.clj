@@ -6,22 +6,37 @@
   :source-paths ["src/clj" "src/cljs"]
   :test-paths ["test/clj" "test/cljs"]
 
-  :dependencies [[org.clojure/clojure "1.7.0-beta1"]
+  :dependencies [[org.clojure/clojure "1.7.0"]
+                 [org.clojure/clojurescript "1.7.170"]
+                 [org.clojure/core.async "0.2.374"]
+                 [org.omcljs/om "1.0.0-alpha22"]
                  [me.raynes/fs "1.4.6"]
-                 [org.clojure/clojurescript "0.0-3269"]
-                 [org.clojure/core.async "0.1.346.0-17112a-alpha"]
-                 [camel-snake-kebab "0.2.4"]
                  [enfocus "2.1.1"]
-                 [datascript "0.9.0"]
-                 [cljs-ajax "0.3.10"]]
+                 [datascript "0.13.3"]
+                 [cljs-ajax "0.3.10"]
+                 [com.cognitect/transit-cljs "0.8.232"]]
 
-  :profiles {:dev {:dependencies [[figwheel "0.3.3"]]
+  :profiles {:dev {:dependencies [[figwheel "0.5.0-1"]
+                                  [figwheel-sidecar "0.5.0-1"]
+                                  [com.cemerick/piggieback "0.2.2-SNAPSHOT"]
+                                  [devcards "0.2.1"]]
 
-                   :plugins [[lein-cljsbuild "1.0.4"]
-                             [lein-figwheel "0.3.3"]]}}
+                   :plugins [[lein-cljsbuild "1.1.1"]
+                             [lein-figwheel "0.5.0-1"]]}}
 
 
-  :cljsbuild {:builds {:chrome-dev  {:source-paths ["src/cljs" "src/cljs-chrome"]
+  :cljsbuild {:builds {:devcards {:source-paths ["src/cljs" "src/devcards"]
+                                  :figwheel     {:devcards true
+                                                 :websocket-host "localhost"}
+                                  :compiler     {:asset-path           "/js/out-devcards"
+                                                 :output-to            "resources/public/js/devcards.js"
+                                                 :output-dir           "resources/public/js/out-devcards"
+                                                 :source-map           "resources/public/js/out-devcards.js.map"
+                                                 :main                 youtube-looper.devcards
+                                                 :warnings             {:single-segment-namespace false}
+                                                 :source-map-timestamp true}}
+                       
+                       :chrome-dev  {:source-paths ["src/cljs" "src/cljs-chrome"]
                                      :compiler     {:output-to     "browsers/chrome/js/youtube-looper.js"
                                                     :optimizations :whitespace
                                                     :pretty-print  true}}
@@ -61,7 +76,7 @@
                                                       :source-map    "browsers/chrome/js/youtube-looper.js.map"}}}
               :test-commands {"unit-test" ["slimerjs" :runner "out/test/youtube-looper-test.js"]}}
 
-  :figwheel {:http-server-root "repl" ;; default and assumes "resources"
+  :figwheel {:http-server-root "public" ;; default and assumes "resources"
              :server-port 3449 ;; default
 
              ;; Start an nREPL server into the running figwheel process

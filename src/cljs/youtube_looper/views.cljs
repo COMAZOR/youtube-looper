@@ -23,7 +23,7 @@
    :text-decoration "none"})
 
 (def blue-link-style
-  (merge link-style {:color blue}))
+  (merge link-style {:color blue})) 
 
 (def input-style
   {:width     "27px"
@@ -43,6 +43,8 @@
      (select-keys current-loop [:loop/start :loop/finish])))
 
 ; templates
+
+(def MAIN_CONTAINER_SELECTOR "#movie_player")
 
 (em/defsnippet loop-item :compiled "templates/yt-dialog.html"
   [".ytp-menu-row:first-child"]
@@ -134,7 +136,7 @@
                                   :label "Youtube Looper"
                                   :html "AB"))
 
-(defn dialog-el [] ($ ($ ".html5-video-controls") ".ytl-dialog"))
+(defn dialog-el [] ($ ($ MAIN_CONTAINER_SELECTOR) ".ytl-dialog"))
 
 (defn loop-bar []
   (or ($ ".ytp-ab-looper-progress")
@@ -153,7 +155,7 @@
 
 (defn show-dialog [flux-info]
   (let [dialog (dialog-template flux-info)]
-    (append-or-update! ($ ".html5-video-controls") ".ytl-dialog" dialog)))
+    (append-or-update! ($ MAIN_CONTAINER_SELECTOR) ".ytl-dialog" dialog)))
 
 ; render engine
 

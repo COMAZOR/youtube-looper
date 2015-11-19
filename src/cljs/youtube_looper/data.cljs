@@ -1,6 +1,6 @@
 (ns youtube-looper.data
   (:require-macros [wilkerdev.util.macros :refer [all-or-nothing]])
-  (:require [datascript :as d]
+  (:require [datascript.core :as d]
             [clojure.set :refer [rename-keys]]
             [youtube-looper.browser :refer [t]]
             [youtube-looper.util :refer [parse-time]]

@@ -1,6 +1,5 @@
 (ns wilkerdev.util
-  (:require [camel-snake-kebab.core :as csk]
-            [goog.string]
+  (:require [goog.string]
             [goog.string.format]))
 
 (defn mapply
@@ -20,7 +19,7 @@
   "Forces a js->map convertion but only on the first level of nesting."
   (->> (js-keys obj)
        (map #(vector % (aget obj %)))
-       (map #(update-in % [0] (comp keyword csk/->kebab-case)))
+       (map #(update-in % [0] (comp keyword goog.string/toSelectorCase)))
        (into {})))
 
 (defn map->query [m]
