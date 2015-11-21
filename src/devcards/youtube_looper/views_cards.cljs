@@ -12,7 +12,7 @@
     (f)))
 
 (defn call-computed [c name & args]
-  (if-let [f (om/get-computed c name)]
+  (when-let [f (om/get-computed c name)]
     (apply f args)))
 
 (defui LoopRow
@@ -38,18 +38,17 @@
                                 (om/update-state! c merge {key input-value}))})))
 
 (defui NewLoopForm
-  static om/IQuery
-  (query [this] [:loop/start :loop/finish])
-
   Object
   (render [this]
-          (let [props (om/props this)]
+          (let [{:keys [on-submit]} (om/props this)]
             (dom/div nil
               (state-input this :loop/start)
               (state-input this :loop/finish)
-              (dom/button #js {:onClick #(do
-                                          (call-computed this :on-submit (om/get-state this))
-                                          (om/set-state! this {:loop/start "" :loop/finish ""}))} "Add Loop")))))
+              (dom/button #js {:onClick
+                               #(do
+                                 (on-submit (om/get-state this))
+                                 (om/set-state! this {:loop/start "" :loop/finish ""}))}
+                          "Add Loop")))))
 
 (def new-loop-form (om/factory NewLoopForm))
 
@@ -65,8 +64,7 @@
   static om/IQuery
   (query [this]
     [:youtube/id
-     {:track/loops (om/get-query LoopRow)}
-     {:track/new-loop (om/get-query NewLoopForm)}])
+     {:track/loops (om/get-query LoopRow)}])
   
   static om/Ident
   (ident [this {:keys [youtube/id]}]
@@ -74,11 +72,11 @@
  
   Object
   (render [this]
-    (let [{:keys [youtube/id track/loops track/new-loop]} (om/props this)]
+    (let [{:keys [track/loops]} (om/props this)]
       (dom/div nil
         (apply dom/div nil (->> (map #(om/computed % {:on-delete (partial delete-loop this %)}) loops)
                                 (map loop-row)))
-        (new-loop-form (om/computed new-loop {:on-submit #(create-loop this %)}))))))
+        (new-loop-form {:on-submit #(create-loop this %)})))))
 
 (def loop-manager (om/factory LoopManager))
 
@@ -96,18 +94,26 @@
 (def init-data {})
 
 (def fake-store
-  (p/map-kv-store {"123" {:youtube/id "123"
-                          :track/new-loop {}
-                          :track/loops      [{:loop/label "full" :loop/start 5 :loop/finish 200}]}}))
+  (p/map-kv-store {"123" {:youtube/id  "123"
+                          :track/loops #{{:loop/label "full" :loop/start 5 :loop/finish 200}}}}))
 
 (def reconciler
   (om/reconciler
     {:state  init-data
      :parser p/parser
      :send   (fn [query cb]
-               (println "REMOTE" query)
                (cb (p/remote-parser {:current-track #(str "123")
                                      :store         fake-store}
+                                    (:remote query))))}))
+
+(def reconciler-local-storage
+  (om/reconciler
+    {:state  init-data
+     :parser p/parser
+     :send   (fn [query cb]
+               (println "REMOTE" query)
+               (cb (p/remote-parser {:current-track #(str "123")
+                                     :store         (p/local-storage-kv-store "cards-")}
                                     (:remote query))))}))
 
 (defcard loop-row-sample
@@ -119,3 +125,7 @@
 (defcard loop-page-card
   "Display the loop manager dialog"
   (om/mock-root reconciler LoopPage))
+
+(defcard loop-page-card-local-storage
+  "Display the loop manager dialog using local storage."
+  (om/mock-root reconciler-local-storage LoopPage))
