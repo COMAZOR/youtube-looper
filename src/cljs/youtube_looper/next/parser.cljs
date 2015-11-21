@@ -89,7 +89,9 @@
 (defmulti remote-mutate om/dispatch)
 
 (defmethod remote-mutate 'track/new-loop [{:keys [store]} _ {:keys [youtube/id loop]}]
-  {:action #(kv-update! store id (fn [track] (update-in track [:track/loops] (fn [x] (conj (or x #{}) loop)))))})
+  {:action #(kv-update! store id (fn [track] (-> (or track {})
+                                                 (assoc :youtube/id id)
+                                                 (update :track/loops (fn [x] (conj (or x #{}) loop))))))})
 
 (defmethod remote-mutate 'track/remove-loop [{:keys [store]} _ {:keys [youtube/id loop]}]
   {:action #(kv-update! store id (fn [track] (update-in track [:track/loops] disj loop)))})

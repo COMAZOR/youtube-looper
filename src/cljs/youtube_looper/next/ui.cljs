@@ -21,7 +21,11 @@
   (render [this]
           (let [{:keys [:loop/label :loop/start :loop/finish] :as loop} (-> this om/props)]
             (dom/div nil
-              (dom/div nil label)
+              (dom/div #js {:onClick #(if-let [label (js/prompt "New Label")]
+                                       (call-computed this :update-label label))}
+                (if label
+                  label
+                  (dom/i nil "No Label")))
               (dom/div nil start)
               (dom/div nil finish)
               (dom/a #js {:href "#" :onClick (pd #(call-computed this :on-delete))} "Delete")))))
@@ -74,6 +78,13 @@
   (let [id (-> c om/props :youtube/id)]
     (om/transact! c `[(track/remove-loop {:loop ~loop :youtube/id ~id})])))
 
+(defn update-label [c loop label]
+  (let [id (-> c om/props :youtube/id)
+        new-loop (assoc loop :loop/label label)]
+    (om/transact! c `[(track/remove-loop {:loop ~loop :youtube/id ~id})
+                      (track/new-loop {:loop ~new-loop :youtube/id ~id})])
+    #_ (om/transact! c `[(track/remove-loop {:loop ~loop :youtube/id ~id})])))
+
 (defui LoopManager
   static om/IQuery
   (query [this]
@@ -88,7 +99,8 @@
   (render [this]
           (let [{:keys [track/loops]} (om/props this)]
             (dom/div nil
-              (apply dom/div nil (->> (map #(om/computed % {:on-delete (partial delete-loop this %)}) loops)
+              (apply dom/div nil (->> (map #(om/computed % {:on-delete (partial delete-loop this %)
+                                                            :update-label (partial update-label this %)}) loops)
                                       (map loop-row)))
               (new-loop-form {:on-submit #(create-loop this %)})))))
 

@@ -71,7 +71,11 @@
             :track/loops
                         #{{:loop/label "full", :loop/start 5, :loop/finish 200}
                           {:loop/label "intro", :loop/start 204, :loop/finish 205}
-                          sample-loop}}))))
+                          sample-loop}}))
+    (p/remote-parser {:store store} `[(track/new-loop {:youtube/id "12" :loop ~sample-loop})])
+    (is (= (p/kv-get store "12")
+           {:youtube/id "12",
+            :track/loops #{sample-loop}}))))
 
 (deftest test-remote-track-remove-loop
   (let [store (p/map-kv-store {"123" sample-track})
