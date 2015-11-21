@@ -1,4 +1,4 @@
-(ns youtube-looper.views-cards
+(ns youtube-looper.ui-cards
   (:require [cljs.test :refer-macros [is async]]
             [om.next :as om :refer-macros [defui]]
             [om.dom :as dom]
