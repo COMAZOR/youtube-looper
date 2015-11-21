@@ -1,7 +1,8 @@
 (ns youtube-looper.next.ui
   (:require [om.next :as om :refer-macros [defui]]
             [om.dom :as dom]
-            [youtube-looper.next.parser :as p]))
+            [youtube-looper.next.parser :as p]
+            [youtube-looper.next.styles :as s :refer [css]]))
 
 (defn pd [f]
   (fn [e]
@@ -19,8 +20,9 @@
 
   Object
   (render [this]
-          (let [{:keys [:loop/label :loop/start :loop/finish] :as loop} (-> this om/props)]
-            (dom/div nil
+          (let [{:keys [:loop/label :loop/start :loop/finish]} (-> this om/props)]
+            (dom/div #js {:style (css s/flex-row (s/justify-content "space-between")
+                                      {:width 300})}
               (dom/div #js {:onClick #(if-let [label (js/prompt "New Label")]
                                        (call-computed this :update-label label))}
                 (if label
