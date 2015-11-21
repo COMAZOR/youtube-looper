@@ -29,6 +29,9 @@
                                      :store         (p/local-storage-kv-store "cards-")}
                                     (:remote query))))}))
 
+(defcard numeric-input
+  (ui/numeric-input {:value "" :onChange #(print "numeric input update" %)}))
+
 (defcard loop-row-sample
   (ui/loop-row {:loop/start  123
                 :loop/finish 128

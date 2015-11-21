@@ -28,21 +28,38 @@
 
 (def loop-row (om/factory LoopRow))
 
-(defn state-input [c key]
-  (let [value (om/get-state c key)]
-    (dom/input #js {:value    value
-                    :onChange #(let [input-value (.. % -target -value)]
-                                (om/update-state! c merge {key input-value}))})))
+(defn input [{:keys [value onChange]}]
+  (dom/input
+    #js {:value    (or value "")
+         :onChange #(onChange (.. % -target -value))}))
+
+(defn numeric-input [{:keys [value onChange] :as props}]
+  (js/React.createElement "input"
+                          #js {:value    (or value "")
+                               :onChange #(let [value (.. % -target -value)]
+                                           (cond
+                                             (re-find #"^\d+(\.\d+)?$" value) (onChange (js/parseFloat value))
+                                             (= "" value) (onChange "")))}))
+
+(defn state-input [c {:keys [name] :as options}]
+  (let [value (om/get-state c name)
+        comp (get options :comp input)]
+    (comp {:value    value
+           :onChange #(om/update-state! c merge {name %})})))
+
+(defn valid-loop? [{:keys [loop/start loop/finish] :as loop}]
+  (and (number? start) (number? finish)
+       (< start finish)))
 
 (defui NewLoopForm
   Object
   (render [this]
           (let [{:keys [on-submit]} (om/props this)]
             (dom/div nil
-              (state-input this :loop/start)
-              (state-input this :loop/finish)
+              (state-input this {:name :loop/start :comp numeric-input})
+              (state-input this {:name :loop/finish :comp numeric-input})
               (dom/button #js {:onClick
-                               #(do
+                               #(when (valid-loop? (om/get-state this))
                                  (on-submit (om/get-state this))
                                  (om/set-state! this {:loop/start "" :loop/finish ""}))}
                           "Add Loop")))))
