@@ -79,19 +79,19 @@
 
 ; Remote Key Value Parser
 
+(defn blank-track [id] {:youtube/id id :track/loops #{}})
+
 (defmulti remote-read om/dispatch)
 
 (defmethod remote-read :app/current-track [{:keys [store current-track]} _ _]
   {:value (or (kv-get store (current-track))
-              {:youtube/id (current-track)
-               :track/loops #{}})})
+              (blank-track (current-track)))})
 
 (defmulti remote-mutate om/dispatch)
 
 (defmethod remote-mutate 'track/new-loop [{:keys [store]} _ {:keys [youtube/id loop]}]
-  {:action #(kv-update! store id (fn [track] (-> (or track {})
-                                                 (assoc :youtube/id id)
-                                                 (update :track/loops (fn [x] (conj (or x #{}) loop))))))})
+  {:action #(kv-update! store id (fn [track] (-> (or track (blank-track id))
+                                                 (update :track/loops conj loop))))})
 
 (defmethod remote-mutate 'track/remove-loop [{:keys [store]} _ {:keys [youtube/id loop]}]
   {:action #(kv-update! store id (fn [track] (update-in track [:track/loops] disj loop)))})
