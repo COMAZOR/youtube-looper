@@ -93,47 +93,6 @@
 
 (def loop-page (om/factory LoopPage))
 
-(defui SampleComponent
-  static om/IQuery
-  (query [this]
-         [:title])
-
-  static om/Ident
-  (ident [this {:keys [db/id]}]
-         [:entity-by-id id])
-  
-  Object
-  (render [this]
-          (let [{:keys [title]} (om/props this)
-                {:keys [other]} (om/get-computed this)]
-            (dom/div nil
-              title " - " other " - "
-              (dom/button #js {:onClick #(om/set-state! this {:anything "value"})} "Add State")))))
-
-(def sample-comp (om/factory SampleComponent))
-
-(defui ContainerComponent
-  static om/IQuery
-  (query [this]
-         [{:node (om/get-query SampleComponent)}])
-  
-  Object
-  (render [this]
-          (let [{:keys [node]} (om/props this)]
-            (sample-comp (om/computed node {:other "value"})))))
-
-(defmulti issue-parser om/dispatch)
-
-(defmethod issue-parser :node [_ _ _]
-  {:value {:title "Sample" :db/id 2}})
-
-(def issue-reconsiler
-  (om/reconciler
-    {:parser (om/parser {:read issue-parser})}))
-
-(defcard state-issue
-  (om/mock-root issue-reconsiler ContainerComponent))
-
 (def init-data {})
 
 (def fake-store
