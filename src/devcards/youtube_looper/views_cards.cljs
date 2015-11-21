@@ -2,129 +2,154 @@
   (:require [cljs.test :refer-macros [is async]]
             [goog.dom :as gdom]
             [om.next :as om :refer-macros [defui]]
-            [om.dom :as dom])
+            [om.dom :as dom]
+            [youtube-looper.next.parser :as p])
   (:require-macros [devcards.core :as dc :refer [defcard deftest]]))
 
-(defprotocol KVSyncStore
-  (kv-get [this key])
-  (kv-set! [this key value]))
+(defn pd [f]
+  (fn [e]
+    (.preventDefault e)
+    (f)))
 
-(defrecord MapKVStore [data]
-  KVSyncStore
-  (kv-get [_ key] (get @data key))
-  (kv-set! [_ key value] (swap! data assoc key value)))
-
-(defn map-kv-store
-  ([] (map-kv-store {}))
-  ([data] (MapKVStore. (atom data))))
-
-(defui Hello
-  Object
-  (render [this]
-    (dom/p nil (-> this om/props :text))))
-
-(def hello (om/factory Hello))
+(defn remove-loop [c]
+  )
 
 (defui LoopRow
   static om/IQuery
   (query [this]
     [:loop/label :loop/start :loop/finish])
 
-  static om/Ident
-  (ident [this {:keys [:db/id]}]
-    [:loop/by-id id])
-
   Object
   (render [this]
-    (let [{:keys [:loop/label :loop/start :loop/finish]} (-> this om/props)]
+    (let [{:keys [:loop/label :loop/start :loop/finish] :as loop} (-> this om/props)]
       (dom/div nil
         (dom/div nil label)
         (dom/div nil start)
-        (dom/div nil finish)))))
+        (dom/div nil finish)
+        (dom/a #js {:href "#" :onClick (pd #((om/get-computed this :on-delete)))} "Delete")))))
 
 (def loop-row (om/factory LoopRow))
+
+(defn state-input [c key]
+  (let [value (om/get-state c key)]
+    (dom/input #js {:value    value
+                    :onChange #(let [input-value (.. % -target -value)]
+                                (om/update-state! c merge {key input-value}))})))
+
+(defui NewLoopForm
+  static om/IQuery
+  (query [this] [:loop/start :loop/finish])
+
+  Object
+  (render [this]
+          (let [props (om/props this)
+                {:keys [on-submit]} (om/get-computed this)]
+            (dom/div nil
+              (state-input this :loop/start)
+              (state-input this :loop/finish)
+              (dom/button #js {:onClick #(do
+                                          (on-submit (om/get-state this))
+                                          (om/set-state! this {:loop/start "" :loop/finish ""}))} "Add Loop")))))
+
+(def new-loop-form (om/factory NewLoopForm))
+
+(defn create-loop [c loop]
+  (let [id (-> c om/props :youtube/id)]
+    (om/transact! c `[(track/new-loop {:loop ~loop :youtube/id ~id})])))
+
+(defn delete-loop [c loop]
+  (let [id (-> c om/props :youtube/id)]
+    (om/transact! c `[(track/remove-loop {:loop ~loop :youtube/id ~id})])))
 
 (defui LoopManager
   static om/IQuery
   (query [this]
-    '[:video/title :video/loops])
+    [:youtube/id
+     {:track/loops (om/get-query LoopRow)}
+     {:track/new-loop (om/get-query NewLoopForm)}])
   
   static om/Ident
-  (ident [this {:keys [:video/youtube-id]}]
-    [:videos/by-youtube-id youtube-id])
-
+  (ident [this {:keys [youtube/id]}]
+    [:tracks/by-youtube-id id])
+ 
   Object
   (render [this]
-    (let [{:keys [:video/loops] :as props} (om/props this)]
-      (println "render loops" props)
-      (apply dom/div nil (map loop-row loops)))))
+    (let [{:keys [youtube/id track/loops track/new-loop]} (om/props this)]
+      (dom/div nil
+        (apply dom/div nil (->> (map #(om/computed % {:on-delete (partial delete-loop this %)}) loops)
+                                (map loop-row)))
+        (new-loop-form (om/computed new-loop {:on-submit #(create-loop this %)}))))))
 
 (def loop-manager (om/factory LoopManager))
 
 (defui LoopPage
   static om/IQuery
-  (query [this] [{:videos/current (om/get-query LoopManager)}])
+  (query [this] [{:app/current-track (om/get-query LoopManager)}])
   
   Object
   (render [this]
-    (let [{:keys [videos/current] :as props} (om/props this)]
-      (println "manager props" props)
-      (loop-manager current))))
+    (let [{:keys [app/current-track] :as props} (om/props this)]
+      (loop-manager current-track))))
 
 (def loop-page (om/factory LoopPage))
 
-(defmulti read om/dispatch)
+(defui SampleComponent
+  static om/IQuery
+  (query [this]
+         [:title])
 
-(defmethod read :default [{:keys [state]} key params]
-  (let [st @state]
-    (if-let [[_ v] (find st key)]
-      {:value v}
-      {:value :not-found})))
+  static om/Ident
+  (ident [this {:keys [db/id]}]
+         [:entity-by-id id])
+  
+  Object
+  (render [this]
+          (let [{:keys [title]} (om/props this)
+                {:keys [other]} (om/get-computed this)]
+            (dom/div nil
+              title " - " other " - "
+              (dom/button #js {:onClick #(om/set-state! this {:anything "value"})} "Add State")))))
 
-(defmethod read :videos/current [{:keys [state]} k _]
-  (let [st @state]
-    (if (contains? st k)
-      {:value (->> (get st k)
-                   (get-in st))}
-      {:remote true})))
+(def sample-comp (om/factory SampleComponent))
 
-(defmethod read :video/loops [{:keys [query store]} _ {:keys [video]}]
-  {:value (or (kv-get store video) :not-found)})
+(defui ContainerComponent
+  static om/IQuery
+  (query [this]
+         [{:node (om/get-query SampleComponent)}])
+  
+  Object
+  (render [this]
+          (let [{:keys [node]} (om/props this)]
+            (sample-comp (om/computed node {:other "value"})))))
 
-(defmulti mutate om/dispatch)
+(defmulti issue-parser om/dispatch)
 
-(defmethod mutate 'video/new-loop [{:keys [store]} _ {:keys [video] :as loop}]
-  (let [loop (dissoc loop :video)
-        loops (or (kv-get store video) [])]
-    {:value {:keys []}
-     :action #(kv-set! store video (conj loops loop))}))
+(defmethod issue-parser :node [_ _ _]
+  {:value {:title "Sample" :db/id 2}})
 
-(def parser (om/parser {:read read :mutate mutate}))
+(def issue-reconsiler
+  (om/reconciler
+    {:parser (om/parser {:read issue-parser})}))
 
-(defmulti remote-read om/dispatch)
-
-(defmethod remote-read :videos/current [{:keys [store current-video] :as env} _ _]
-  {:value (kv-get store (current-video))})
-
-(def remote-parser (om/parser {:read remote-read}))
+(defcard state-issue
+  (om/mock-root issue-reconsiler ContainerComponent))
 
 (def init-data {})
 
 (def fake-store
-  (map-kv-store {"123" {:video/youtube-id "123"
-                        :video/title      "sample"
-                        :video/loops      [{:loop/label "full" :loop/start 5 :loop/finish 200}
-                                           {:loop/label "intro" :loop/start 204 :loop/finish 205}]}}))
+  (p/map-kv-store {"123" {:youtube/id "123"
+                          :track/new-loop {}
+                          :track/loops      [{:loop/label "full" :loop/start 5 :loop/finish 200}]}}))
 
 (def reconciler
   (om/reconciler
     {:state  init-data
-     :parser parser
+     :parser p/parser
      :send   (fn [query cb]
                (println "REMOTE" query)
-               (cb (remote-parser {:current-video #(str "123")
-                                   :store         fake-store}
-                                  (:remote query))))}))
+               (cb (p/remote-parser {:current-track #(str "123")
+                                     :store         fake-store}
+                                    (:remote query))))}))
 
 (defcard loop-row-sample
   (loop-row {:loop/start 123
@@ -132,32 +157,6 @@
              :loop/label "Sample"
              :loop/id 1}))
 
-(defcard basic-nested-component
-  "Test that component nesting works"
-  (let [reconciler_ (om/reconciler
-                     {:state  {:videos/by-youtube-id {"123" {:video/title "sample"}}}
-                      :parser parser
-                      :send   (fn [query cb]
-                                (println "REMOTE" query)
-                                (println "resp" (remote-parser {} (:remote query)))
-                                (cb (remote-parser {} (:remote query))))})]
-    (om/mock-root reconciler LoopPage)))
-
-(deftest test-indexer
-  "Test indexer"
-  (let [idxr (get-in reconciler [:config :indexer])]
-    (is (not (nil? idxr)) "Indexer is not nil in the reconciler")
-    (is (not (nil? @idxr)) "Indexer is IDeref")))
-
-(deftest test-read-video-loops
-  "Reads the stored loops"
-  (let [loops [{:label "Hello"}]
-        env {:state {} :store (map-kv-store {"1234" loops})}]
-    (is (= (parser env '[(:video/loops {:video "1234"})]) {:video/loops loops}))
-    (is (= (parser env '[(:video/loops {:video "abc"})]) {:video/loops :not-found}))))
-
-(deftest test-parser-mutate-new-loop
-  (let [store (map-kv-store)
-        env {:state {} :store store}]
-    (parser env '[(video/new-loop {:label "hello" :video "abc"})])
-    (is (= [{:label "hello"}] (kv-get store "abc")))))
+(defcard loop-page-card
+  "Display the loop manager dialog"
+  (om/mock-root reconciler LoopPage))
