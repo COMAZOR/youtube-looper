@@ -38,12 +38,13 @@
             (recur t out-path)))
         out-path))))
 
-(defmethod mutate 'track/new-loop [{:keys [state]} _ {:keys [youtube/id loop]}]
-  {:action #(swap! state update-in [:tracks/by-youtube-id id :track/loops] conj loop)})
+(defmethod mutate 'track/new-loop [{:keys [state ast]} _ {:keys [youtube/id loop]}]
+  {:action #(swap! state update-in [:tracks/by-youtube-id id :track/loops] conj loop)
+   :remote ast})
 
-(defmethod mutate 'track/remove-loop [{:keys [state]} _ {:keys [youtube/id loop]}]
-  (let []
-    {:action #(swap! state update-in [:tracks/by-youtube-id id :track/loops] (fn [x] (filterv (partial not= loop) x)))}))
+(defmethod mutate 'track/remove-loop [{:keys [state ast]} _ {:keys [youtube/id loop]}]
+  {:action #(swap! state update-in [:tracks/by-youtube-id id :track/loops] (fn [x] (filterv (partial not= loop) x)))
+   :remote ast})
 
 (def parser (om/parser {:read read :mutate mutate}))
 
@@ -52,6 +53,9 @@
 (defprotocol KVSyncStore
   (kv-get [this key])
   (kv-set! [this key value]))
+
+(defn kv-update! [store key f]
+  (kv-set! store key (f (kv-get store key))))
 
 (defrecord MapKVStore [data]
   KVSyncStore
@@ -79,5 +83,11 @@
                :track/loops []})})
 
 (defmulti remote-mutate om/dispatch)
+
+(defmethod remote-mutate 'track/new-loop [{:keys [store]} _ {:keys [youtube/id loop]}]
+  {:action #(kv-update! store id (fn [track] (update-in track [:track/loops] conj loop)))})
+
+(defmethod remote-mutate 'track/remove-loop [{:keys [store]} _ {:keys [youtube/id loop]}]
+  {:action #(kv-update! store id (fn [track] (update-in track [:track/loops] (fn [x] (filterv (partial not= loop) x)))))})
 
 (def remote-parser (om/parser {:read remote-read :mutate remote-mutate}))

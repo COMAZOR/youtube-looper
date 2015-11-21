@@ -11,8 +11,9 @@
     (.preventDefault e)
     (f)))
 
-(defn remove-loop [c]
-  )
+(defn call-computed [c name & args]
+  (if-let [f (om/get-computed c name)]
+    (apply f args)))
 
 (defui LoopRow
   static om/IQuery
@@ -26,7 +27,7 @@
         (dom/div nil label)
         (dom/div nil start)
         (dom/div nil finish)
-        (dom/a #js {:href "#" :onClick (pd #((om/get-computed this :on-delete)))} "Delete")))))
+        (dom/a #js {:href "#" :onClick (pd #(call-computed this :on-delete))} "Delete")))))
 
 (def loop-row (om/factory LoopRow))
 
@@ -42,13 +43,12 @@
 
   Object
   (render [this]
-          (let [props (om/props this)
-                {:keys [on-submit]} (om/get-computed this)]
+          (let [props (om/props this)]
             (dom/div nil
               (state-input this :loop/start)
               (state-input this :loop/finish)
               (dom/button #js {:onClick #(do
-                                          (on-submit (om/get-state this))
+                                          (call-computed this :on-submit (om/get-state this))
                                           (om/set-state! this {:loop/start "" :loop/finish ""}))} "Add Loop")))))
 
 (def new-loop-form (om/factory NewLoopForm))
