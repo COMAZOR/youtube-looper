@@ -20,72 +20,29 @@
 (defn render-subtree-into-container [parent c node]
   (js/ReactDOM.unstable_renderSubtreeIntoContainer parent c node))
 
-; Youtube Components
-
-(defn youtube-progress-bar [{:keys [color offset scale]}]
-  (dom/div #js {:style (css s/youtube-progress
-                            {:background (or color "rgba(6, 255, 0, 0.35)")
-                             :left       (str offset "%")
-                             :transform  (str "scaleX(" scale ")")})}))
-
-(defui TrackLoopOverlay
-  static om/IQuery
-  (query [this] [:track/duration {:track/loop [:loop/start :loop/finish]}])
-  
-  Object
-  (render [this]
-          (let [{:keys [track/duration] {:keys [loop/start loop/finish]} :track/loop} (om/props this)
-                start-pct (-> (/ start duration) (* 100))
-                size-pct (/ (- finish start) duration)]
-            (youtube-progress-bar {:offset start-pct
-                                   :scale size-pct}))))
-
-(def track-loop-overlay (om/factory TrackLoopOverlay))
-
-; Looper Components
+; Helper Components
 
 (defui Portal
   Object
   (componentDidMount [this]
-    (let [props (om/props this)
-          node (doto (wd/create-element! "div")
-                 (wd/set-style! (:style props)))]
-      (cond
-        (:append-to props) (wd/append-to! node (wd/$ (:append-to props)))
-        (:insert-after props) (wd/insert-after! node (wd/$ (:insert-after props))))
-      
-      (gobj/set this "node" node)
-      (render-subtree-into-container this (apply dom/div nil (om/children this)) node)))
+                     (let [props (om/props this)
+                           node (doto (wd/create-element! "div")
+                                  (wd/set-style! (:style props)))]
+                       (cond
+                         (:append-to props) (wd/append-to! node (wd/$ (:append-to props)))
+                         (:insert-after props) (wd/insert-after! node (wd/$ (:insert-after props))))
+
+                       (gobj/set this "node" node)
+                       (render-subtree-into-container this (apply dom/div nil (om/children this)) node)))
 
   (componentWillUnmount [this]
-    (let [node (gobj/get this "node")]
-      (js/ReactDOM.unmountComponentAtNode node)
-      (wd/remove-node! node)))
-  
+                        (let [node (gobj/get this "node")]
+                          (js/ReactDOM.unmountComponentAtNode node)
+                          (wd/remove-node! node)))
+
   (render [this] (js/React.DOM.noscript)))
 
 (def portal (om/factory Portal))
-
-(defui LoopRow
-  static om/IQuery
-  (query [this]
-         [:loop/label :loop/start :loop/finish])
-
-  Object
-  (render [this]
-          (let [{:keys [:loop/label :loop/start :loop/finish]} (-> this om/props)]
-            (dom/div #js {:style (css s/flex-row (s/justify-content "space-between")
-                                      {:width 300})}
-              (dom/div #js {:onClick #(if-let [label (js/prompt "New Label")]
-                                       (call-computed this :update-label label))}
-                (if label
-                  label
-                  (dom/i nil "No Label")))
-              (dom/div nil start)
-              (dom/div nil finish)
-              (dom/a #js {:href "#" :onClick (pd #(call-computed this :on-delete))} "Delete")))))
-
-(def loop-row (om/factory LoopRow))
 
 (defn input [{:keys [value onChange]}]
   (dom/input
@@ -106,6 +63,59 @@
     (comp {:value    value
            :onChange #(om/update-state! c merge {name %})})))
 
+; Youtube Components
+
+(defn youtube-progress-bar [{:keys [color offset scale]}]
+  (dom/div #js {:style (css s/youtube-progress
+                            {:background (or color "rgba(6, 255, 0, 0.35)")
+                             :left       (str offset "%")
+                             :transform  (str "scaleX(" scale ")")})}))
+
+(defui TrackLoopOverlay
+  static om/Ident
+  (ident [this {:keys [db/id]}]
+         [:entities/by-id id])
+  
+  static om/IQuery
+  (query [this] [:track/duration {:track/loop [:loop/start :loop/finish]}])
+  
+  Object
+  (render [this]
+          (let [{:keys [track/duration] {:keys [loop/start loop/finish]} :track/loop} (om/props this)
+                start-pct (-> (/ start duration) (* 100))
+                size-pct (/ (- finish start) duration)]
+            (youtube-progress-bar {:offset start-pct
+                                   :scale size-pct}))))
+
+(def track-loop-overlay (om/factory TrackLoopOverlay {:keyfn :db/id}))
+
+; Looper Components
+
+(defui LoopRow
+  static om/Ident
+  (ident [this {:keys [db/id]}]
+         [:entities/by-id id])
+  
+  static om/IQuery
+  (query [this]
+         [:loop/label :loop/start :loop/finish])
+
+  Object
+  (render [this]
+          (let [{:keys [:loop/label :loop/start :loop/finish]} (-> this om/props)]
+            (dom/div #js {:style (css s/flex-row (s/justify-content "space-between")
+                                      {:width 300})}
+              (dom/div #js {:onClick #(if-let [label (js/prompt "New Label")]
+                                       (call-computed this :update-label label))}
+                (if label
+                  label
+                  (dom/i nil "No Label")))
+              (dom/div nil start)
+              (dom/div nil finish)
+              (dom/a #js {:href "#" :onClick (pd #(call-computed this :on-delete))} "Delete")))))
+
+(def loop-row (om/factory LoopRow {:keyfn :db/id}))
+
 (defn valid-loop? [{:keys [loop/start loop/finish] :as loop}]
   (and (number? start) (number? finish)
        (< start finish)))
@@ -119,35 +129,32 @@
               (state-input this {:name :loop/finish :comp numeric-input})
               (dom/button #js {:onClick
                                #(when (valid-loop? (om/get-state this))
-                                 (on-submit (om/get-state this))
+                                 (on-submit (assoc (om/get-state this) :db/id (random-uuid)))
                                  (om/set-state! this {:loop/start "" :loop/finish ""}))}
                           "Add Loop")))))
 
 (def new-loop-form (om/factory NewLoopForm))
 
 (defn create-loop [c loop]
-  (let [id (-> c om/props :youtube/id)]
-    (om/transact! c `[(track/new-loop {:loop ~loop :youtube/id ~id})])))
+  (let [id (-> c om/props :db/id)]
+    (om/transact! c `[(track/new-loop {:loop ~loop :db/id ~id})])))
 
 (defn delete-loop [c loop]
-  (let [id (-> c om/props :youtube/id)]
-    (om/transact! c `[(track/remove-loop {:loop ~loop :youtube/id ~id})])))
+  (let [id (-> c om/props :db/id)]
+    (om/transact! c `[(track/remove-loop {:loop ~loop :db/id ~id})])))
 
 (defn update-label [c loop label]
-  (let [id (-> c om/props :youtube/id)
+  (let [id (-> c om/props :db/id)
         new-loop (assoc loop :loop/label label)]
-    (om/transact! c `[(track/remove-loop {:loop ~loop :youtube/id ~id})
-                      (track/new-loop {:loop ~new-loop :youtube/id ~id})])))
+    (om/transact! c `[(track/remove-loop {:loop ~loop :db/id ~id})
+                      (track/new-loop {:loop ~new-loop :db/id ~id})])))
 
 (defui LoopManager
   static om/IQuery
-  (query [this]
-         [:youtube/id
-          {:track/loops (om/get-query LoopRow)}])
+  (query [this] [{:track/loops (om/get-query LoopRow)}])
 
   static om/Ident
-  (ident [this {:keys [youtube/id]}]
-         [:tracks/by-youtube-id id])
+  (ident [this {:keys [db/id]}] [:entities/by-id id])
 
   Object
   (render [this]
@@ -158,7 +165,13 @@
                                       (map loop-row)))
               (new-loop-form {:on-submit #(create-loop this %)})))))
 
-(def loop-manager (om/factory LoopManager))
+(def loop-manager (om/factory LoopManager {:keyfn :db/id}))
+
+(defui LoopDisplay
+  Object
+  (render [this]
+          (portal {:append-to ".ytp-progress-list"}
+            (track-loop-overlay {:track/duration 100 :track/loop {:loop/start 10 :loop/finish 20}}))))
 
 (defui LoopPage
   static om/IQuery
@@ -167,6 +180,7 @@
   Object
   (render [this]
           (let [{:keys [app/current-track] :as props} (om/props this)]
+            (println "rendering page" props)
             (dom/div nil
               (portal {:append-to ".ytp-progress-list"}
                 (track-loop-overlay {:track/duration 100 :track/loop {:loop/start 10 :loop/finish 20}}))

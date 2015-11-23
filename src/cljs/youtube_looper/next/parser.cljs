@@ -2,6 +2,11 @@
   (:require [om.next :as om]
             [wilkerdev.local-storage :as ls]))
 
+(defn mk-ref [{:keys [db/id]}] [:entities/by-id id])
+
+(defn read-track [st track]
+  (update track :track/loops #(map (partial get-in st) %)))
+
 ; Client Parser
 
 (defmulti read om/dispatch)
@@ -12,12 +17,14 @@
       {:value v}
       {:value :not-found})))
 
-(defmethod read :app/current-track [{:keys [state]} k _]
-  (let [st @state]
+(defmethod read :app/current-track [{:keys [state ast]} k _]
+  (let [st @state
+        video (get st :youtube/current-video)]
     (if (contains? st k)
       {:value (->> (get st k)
-                   (get-in st))}
-      {:remote true})))
+                   (get-in st)
+                   (read-track st))}
+      {:remote (assoc ast :params {:youtube/id video})})))
 
 (defmulti mutate om/dispatch)
 
@@ -38,13 +45,25 @@
             (recur t out-path)))
         out-path))))
 
-(defmethod mutate 'track/new-loop [{:keys [state ast]} _ {:keys [youtube/id loop]}]
-  {:action #(swap! state update-in [:tracks/by-youtube-id id :track/loops] conj loop)
-   :remote ast})
+(defn remove-entity [entity]
+  #(filterv (fn [e] (not= (:db/id e) (:db/id entity))) %))
 
-(defmethod mutate 'track/remove-loop [{:keys [state ast]} _ {:keys [youtube/id loop]}]
-  {:action #(swap! state update-in [:tracks/by-youtube-id id :track/loops] disj loop)
-   :remote ast})
+(defn remove-ref [entity]
+  #(filterv (fn [e] (not= (second e) (:db/id entity))) %))
+
+(defmethod mutate 'track/new-loop [{:keys [state ast]} _ {:keys [db/id loop]}]
+  {:action (fn [] (swap! state #(-> (update-in % [:entities/by-id id :track/loops] conj (mk-ref loop))
+                                    (assoc-in [:entities/by-id (:db/id loop)] loop))))
+   :remote (assoc-in ast [:params :youtube/id] (get-in @state [:entities/by-id id :youtube/id]))})
+
+(defmethod mutate 'track/update-loop [{:keys [state ast]} _ {:keys [db/id loop]}]
+  {:action (fn [] (swap! state #(-> (update-in % [:entities/by-id (:db/id loop)] merge loop))))
+   :remote (assoc-in ast [:params :youtube/id] (get-in @state [:entities/by-id id :youtube/id]))})
+
+(defmethod mutate 'track/remove-loop [{:keys [state ast]} _ {:keys [db/id loop]}]
+  {:action (fn [] (swap! state #(-> (update-in % [:entities/by-id id :track/loops] (remove-ref loop))
+                                    (update :entities/by-id dissoc (:db/id loop)))))
+   :remote (assoc-in ast [:params :youtube/id] (get-in @state [:entities/by-id id :youtube/id]))})
 
 (def parser (om/parser {:read read :mutate mutate}))
 
@@ -79,21 +98,27 @@
 
 ; Remote Key Value Parser
 
-(defn blank-track [id] {:youtube/id id :track/loops #{}})
+(defn blank-track [id] {:youtube/id id :track/loops [] :db/id (random-uuid)})
 
 (defmulti remote-read om/dispatch)
 
-(defmethod remote-read :app/current-track [{:keys [store current-track]} _ _]
-  {:value (or (kv-get store (current-track))
-              (blank-track (current-track)))})
+(defmethod remote-read :app/current-track [{:keys [store]} _ {:keys [youtube/id]}]
+  (println "remote reading id" id (or (kv-get store id)
+                                      (let [track (blank-track id)]
+                                        (kv-set! store id track)
+                                        track)))
+  {:value (or (kv-get store id)
+              (let [track (blank-track id)]
+                (kv-set! store id track)
+                track))})
 
 (defmulti remote-mutate om/dispatch)
 
-(defmethod remote-mutate 'track/new-loop [{:keys [store]} _ {:keys [youtube/id loop]}]
-  {:action #(kv-update! store id (fn [track] (-> (or track (blank-track id))
+(defmethod remote-mutate 'track/new-loop [{:keys [store]} _ {:keys [youtube/id loop] :as base}]
+  {:action #(kv-update! store id (fn [track] (-> (or track (assoc (blank-track id) :db/id (:db/id base)))
                                                  (update :track/loops conj loop))))})
 
 (defmethod remote-mutate 'track/remove-loop [{:keys [store]} _ {:keys [youtube/id loop]}]
-  {:action #(kv-update! store id (fn [track] (update-in track [:track/loops] disj loop)))})
+  {:action #(kv-update! store id (fn [track] (update-in track [:track/loops] (remove-entity loop))))})
 
 (def remote-parser (om/parser {:read remote-read :mutate remote-mutate}))

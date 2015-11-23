@@ -49,11 +49,10 @@
   (let [bus (chan 1024 (map (partial debug-input "flux message")))
         pub (async/pub bus first)
         reconciler (om/reconciler
-                     {:state  {}
+                     {:state  {:youtube/current-video (yt/current-video-id)}
                       :parser p/parser
                       :send   (fn [{:keys [remote]} cb]
-                                (cb (p/remote-parser {:current-track yt/current-video-id
-                                                      :store         store}
+                                (cb (p/remote-parser {:store store}
                                                      remote)))})]
 
     ; watch for video page changes

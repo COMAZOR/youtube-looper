@@ -9,16 +9,17 @@
 
 (def fake-store
   (p/map-kv-store {"123" {:youtube/id  "123"
-                          :track/loops #{{:loop/label "full" :loop/start 5 :loop/finish 200}}}}))
+                          :db/id       (random-uuid)
+                          :track/loops [{:db/id (random-uuid) :loop/label "full" :loop/start 5 :loop/finish 200}]}}))
 
 (def reconciler
   (om/reconciler
-    {:state  {}
+    {:state  {:youtube/current-video "123"}
      :parser p/parser
-     :send   (fn [query cb]
-               (cb (p/remote-parser {:current-track #(str "123")
-                                     :store         fake-store}
-                                    (:remote query))))}))
+     :send   (fn [{:keys [remote]} cb]
+               (println "REMOTE" remote)
+               (cb (p/remote-parser {:store fake-store}
+                                    remote)))}))
 
 (def reconciler-local-storage
   (om/reconciler
@@ -41,7 +42,7 @@
                 :loop/finish 128
                 :loop/label  "Sample"}))
 
-(defcard youtube-ui 
+(defcard youtube-ui
   (dom-node (fn [_ node]
               (wd/set-html! node "")
               (doto (wd/create-element! "div")
@@ -60,6 +61,6 @@
   "Display the loop manager dialog"
   (om/mock-root reconciler ui/LoopPage))
 
-#_ (defcard loop-page-card-local-storage
-  "Display the loop manager dialog using local storage."
-  (om/mock-root reconciler-local-storage ui/LoopPage))
+#_(defcard loop-page-card-local-storage
+    "Display the loop manager dialog using local storage."
+    (om/mock-root reconciler-local-storage ui/LoopPage))
