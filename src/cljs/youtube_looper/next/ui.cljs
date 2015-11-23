@@ -1,6 +1,8 @@
 (ns youtube-looper.next.ui
   (:require [om.next :as om :refer-macros [defui]]
             [om.dom :as dom]
+            [wilkerdev.util.dom :as wd]
+            [goog.object :as gobj]
             [youtube-looper.next.parser :as p]
             [youtube-looper.next.styles :as s :refer [css]]))
 
@@ -12,6 +14,30 @@
 (defn call-computed [c name & args]
   (when-let [f (om/get-computed c name)]
     (apply f args)))
+
+; render into subtree
+; https://github.com/facebook/react/issues/4819
+
+(defn render-subtree-into-container [parent c node]
+  (js/ReactDOM.unstable_renderSubtreeIntoContainer parent c node))
+
+(defui Portal
+  Object
+  (componentDidMount [this]
+    (let [props (om/props this)
+          node (cond-> (wd/create-element! "div")
+                 (:append-to props) (wd/append-to! (wd/$ (:append-to props))))]
+      (gobj/set this "node" node)
+      (render-subtree-into-container this (apply dom/div nil (om/children this)) node)))
+
+  (componentWillUnmount [this]
+    (let [node (gobj/get this "node")]
+      (js/ReactDOM.unmountComponentAtNode node)
+      (wd/remove-node! node)))
+  
+  (render [this] (js/React.DOM.noscript)))
+
+(def portal (om/factory Portal))
 
 (defui LoopRow
   static om/IQuery
@@ -84,8 +110,7 @@
   (let [id (-> c om/props :youtube/id)
         new-loop (assoc loop :loop/label label)]
     (om/transact! c `[(track/remove-loop {:loop ~loop :youtube/id ~id})
-                      (track/new-loop {:loop ~new-loop :youtube/id ~id})])
-    #_ (om/transact! c `[(track/remove-loop {:loop ~loop :youtube/id ~id})])))
+                      (track/new-loop {:loop ~new-loop :youtube/id ~id})])))
 
 (defui LoopManager
   static om/IQuery
@@ -115,6 +140,10 @@
   Object
   (render [this]
           (let [{:keys [app/current-track] :as props} (om/props this)]
-            (loop-manager current-track))))
+            (dom/div nil
+              (portal {:append-to "body"}
+                (dom/div nil "Portal content updated")
+                (loop-manager current-track))
+              (loop-manager current-track)))))
 
 (def loop-page (om/factory LoopPage))
