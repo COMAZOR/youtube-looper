@@ -6,6 +6,8 @@
             [youtube-looper.next.parser :as p]
             [youtube-looper.next.styles :as s :refer [css]]))
 
+; Helpers
+
 (defn pd [f]
   (fn [e]
     (.preventDefault e)
@@ -15,18 +17,43 @@
   (when-let [f (om/get-computed c name)]
     (apply f args)))
 
-; render into subtree
-; https://github.com/facebook/react/issues/4819
-
 (defn render-subtree-into-container [parent c node]
   (js/ReactDOM.unstable_renderSubtreeIntoContainer parent c node))
+
+; Youtube Components
+
+(defn youtube-progress-bar [{:keys [color offset scale]}]
+  (dom/div #js {:style (css s/youtube-progress
+                            {:background (or color "rgba(6, 255, 0, 0.35)")
+                             :left       (str offset "%")
+                             :transform  (str "scaleX(" scale ")")})}))
+
+(defui TrackLoopOverlay
+  static om/IQuery
+  (query [this] [:track/duration {:track/loop [:loop/start :loop/finish]}])
+  
+  Object
+  (render [this]
+          (let [{:keys [track/duration] {:keys [loop/start loop/finish]} :track/loop} (om/props this)
+                start-pct (-> (/ start duration) (* 100))
+                size-pct (/ (- finish start) duration)]
+            (youtube-progress-bar {:offset start-pct
+                                   :scale size-pct}))))
+
+(def track-loop-overlay (om/factory TrackLoopOverlay))
+
+; Looper Components
 
 (defui Portal
   Object
   (componentDidMount [this]
     (let [props (om/props this)
-          node (cond-> (wd/create-element! "div")
-                 (:append-to props) (wd/append-to! (wd/$ (:append-to props))))]
+          node (doto (wd/create-element! "div")
+                 (wd/set-style! (:style props)))]
+      (cond
+        (:append-to props) (wd/append-to! node (wd/$ (:append-to props)))
+        (:insert-after props) (wd/insert-after! node (wd/$ (:insert-after props))))
+      
       (gobj/set this "node" node)
       (render-subtree-into-container this (apply dom/div nil (om/children this)) node)))
 
@@ -141,9 +168,14 @@
   (render [this]
           (let [{:keys [app/current-track] :as props} (om/props this)]
             (dom/div nil
-              (portal {:append-to "body"}
-                (dom/div nil "Portal content updated")
-                (loop-manager current-track))
+              (portal {:append-to ".ytp-progress-list"}
+                (track-loop-overlay {:track/duration 100 :track/loop {:loop/start 10 :loop/finish 20}}))
+              (portal {:insert-after ".ytp-settings-button"
+                       :style {:display "inline-block"
+                               :verticalAlign "top"}}
+                (dom/button #js {:className "ytp-button"
+                                 :title "Show Loops"
+                                 :style (css s/youtube-action-button)} "AB"))
               (loop-manager current-track)))))
 
 (def loop-page (om/factory LoopPage))

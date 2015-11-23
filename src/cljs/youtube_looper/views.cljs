@@ -132,11 +132,29 @@
 ; other elements
 
 (defn create-looper-action-button []
-  (yt/create-player-action-button :class "ytp-button-ytlooper"
+  (yt/create-player-action-button :class "ytp-ytlooper"
                                   :label "Youtube Looper"
                                   :html "AB"))
 
 (defn dialog-el [] ($ ($ MAIN_CONTAINER_SELECTOR) ".ytl-dialog"))
+
+(defn block-propagation [el]
+  (doto el
+    (dom/listen "click" #(.stopPropagation %))
+    (dom/listen "keydown" #(.stopPropagation %))
+    (dom/listen "keyup" #(.stopPropagation %))
+    (dom/listen "keypress" #(.stopPropagation %))))
+
+(defn dialog-container []
+  (or ($ ".ytp-looper-container")
+      (doto (dom/create-element! "div")
+        (dom/add-class! "ytp-looper-container")
+        (dom/set-properties! {"data-layer" 9})
+        (dom/set-style! {:z-index 10
+                         :position "absolute"
+                         :bottom "52px" :right "12px"})
+        (block-propagation)
+        (dom/append-to! ($ "#movie_player")))))
 
 (defn loop-bar []
   (or ($ ".ytp-ab-looper-progress")

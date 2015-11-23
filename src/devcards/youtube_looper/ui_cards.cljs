@@ -2,9 +2,10 @@
   (:require [cljs.test :refer-macros [is async]]
             [om.next :as om :refer-macros [defui]]
             [om.dom :as dom]
+            [wilkerdev.util.dom :as wd]
             [youtube-looper.next.parser :as p]
             [youtube-looper.next.ui :as ui])
-  (:require-macros [devcards.core :as dc :refer [defcard deftest]]))
+  (:require-macros [devcards.core :as dc :refer [defcard deftest dom-node]]))
 
 (def fake-store
   (p/map-kv-store {"123" {:youtube/id  "123"
@@ -32,15 +33,33 @@
 (defcard numeric-input
   (ui/numeric-input {:value "" :onChange #(print "numeric input update" %)}))
 
+(defcard track-loop-overlay-sample
+  (ui/track-loop-overlay {:track/duration 100 :track/loop {:loop/start 10 :loop/finish 20}}))
+
 (defcard loop-row-sample
   (ui/loop-row {:loop/start  123
                 :loop/finish 128
                 :loop/label  "Sample"}))
 
+(defcard youtube-ui 
+  (dom-node (fn [_ node]
+              (wd/set-html! node "")
+              (doto (wd/create-element! "div")
+                (wd/set-html! "
+                  <div>
+                    <div class=\"ytp-progress-list\">
+                    </div>
+                    <div>
+                      <button class=\"ytp-settings-button\">Settings</button>
+                    </div>
+                  </div>
+                ")
+                (wd/append-to! node)))))
+
 (defcard loop-page-card
   "Display the loop manager dialog"
   (om/mock-root reconciler ui/LoopPage))
 
-(defcard loop-page-card-local-storage
+#_ (defcard loop-page-card-local-storage
   "Display the loop manager dialog using local storage."
   (om/mock-root reconciler-local-storage ui/LoopPage))

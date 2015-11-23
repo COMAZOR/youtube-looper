@@ -2,6 +2,7 @@
   (:require [goog.style :as style]
             [goog.dom :as dom]
             [goog.dom.classes :as classes]
+            [goog.events :as events]
             [cljs.core.async :refer [chan put! <! >! close!] :as async]))
 
 ; aliases for common globals
@@ -23,7 +24,7 @@
 
 ; style
 
-(defn has-class? [el name]
+(defn has-class? [el name] 
   (classes/has el name))
 
 (defn set-class! [el name]
@@ -45,6 +46,10 @@
 (defn set-style!
   ([el styles] (style/setStyle el (clj->js styles)))
   ([el style value] (style/setStyle el (name style) value)))
+
+; events
+
+(defn listen [el type f] (events/listen el type f))
 
 ; manipulation
 

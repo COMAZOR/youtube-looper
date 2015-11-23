@@ -7,11 +7,13 @@
 
 (defn create-player-action-button [& {:keys [class label tabindex html]
                                       :or   {tabindex "6500"}}]
-  (doto (dom/create-element! "div")
-    (dom/add-class! (str "ytp-button " class))
-    (dom/set-properties! {:role       "button"
-                          :aria-label label
-                          :tabindex   tabindex})
+  (doto (dom/create-element! "button")
+    (dom/add-class! (str class " ytp-button"))
+    (dom/set-properties! {:title "Show Loops" :tabindex tabindex})
+    (dom/set-style! {:vertical-align "top"
+                     :text-align "center"
+                     :font-weight "bold"
+                     :font-size 16})
     (dom/set-html! html)))
 
 (defn ensure-number [n] (if (js/isNaN n) 0 n))

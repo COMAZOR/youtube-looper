@@ -2,13 +2,16 @@
   (:require-macros [cljs.core.async.macros :refer [go]]
                    [wilkerdev.util.macros :refer [dochan go-sub go-sub* all-or-nothing]])
   (:require [cljs.core.async :refer [chan put! <! >! close!] :as async]
+            [om.next :as om]
             [wilkerdev.util.dom :as dom]
             [wilkerdev.util.reactive :as r]
-            [youtube-looper.browser :refer [t]]
-            [youtube-looper.data :as d]
+            [youtube-looper.next.parser :as p]
+            [youtube-looper.next.ui :as ui]
             [youtube-looper.youtube :as yt]
             [youtube-looper.views :as v]
             [youtube-looper.track :as track]))
+
+(enable-console-print!)
 
 (def ^:dynamic *log-debug* false)
 
@@ -32,28 +35,6 @@
 (defn setup-video-time-update [bus]
   (async/pipe (r/listen (yt/get-video) "timeupdate" (constantly-chan [:time-update])) bus))
 
-; this is hackish, but prevents UI to re-render while user is typing
-(defn should-render? [{:keys [db-before db-after]}]
-  (or (= (d/new-loop db-before)
-         (d/new-loop db-after))
-      (not= (count (d/loops-for-current-video db-before))
-            (count (d/loops-for-current-video db-after)))))
-
-(defn setup-render-engine [{:keys [conn bus]}]
-  (let [render-engine (v/init-render-engine)]
-    (d/listen! conn (fn [tx-report]
-                      (if (should-render? tx-report)
-                        (v/request-rerender render-engine
-                                            {:db  (:db-after tx-report)
-                                             :bus bus}))))
-    render-engine))
-
-(defn sync-loops! [db]
-  (let [loops (->> (d/loops-for-current-video db)
-                   (map d/loop-ent-to-storage))
-        video-id (d/settings db :current-video)]
-    (d/sync-loops-for-video! video-id loops)))
-
 (defn wait-for-presence
   ([f] (wait-for-presence f 10))
   ([f delay]
@@ -61,22 +42,25 @@
      (while (not (f)) (<! (async/timeout delay)))
      (f))))
 
+(def store (p/map-kv-store {}))
+
 (defn ^:export init []
   (track/initialize "55eGVmS7Ty7Sa4cLxwpKL235My8elBtQBOk4wx1R" "ghUQSvjYReHqwNhdOROgzI3xm0aybyarCXW30usM")
-  (let [conn (d/create-conn)
-        bus (chan 1024 (map (partial debug-input "flux message")))
+  (let [bus (chan 1024 (map (partial debug-input "flux message")))
         pub (async/pub bus first)
-        looper {:conn conn :bus bus :pub pub}
-        render-engine (setup-render-engine looper)]
+        reconciler (om/reconciler
+                     {:state  {}
+                      :parser p/parser
+                      :send   (fn [{:keys [remote]} cb]
+                                (cb (p/remote-parser {:current-track yt/current-video-id
+                                                      :store         store}
+                                                     remote)))})]
 
     ; watch for video page changes
     (async/pipe (yt/watch-video-load
                   (chan 1024 (comp (filter #(not= % :yt/no-video))
                                    (map #(vector :video-load %)))))
                 bus)
-
-    (go-sub pub :request-rerender _
-      (v/request-rerender render-engine {:db @conn :bus bus}))
 
     (go-sub* pub :video-load _ (chan 1 (take 1))
       ; on Firefox even after the video load is detected the video sometimes takes
@@ -85,55 +69,54 @@
       (track/track-extension-loaded)
 
       (setup-video-time-update bus)
-      (async/pipe (r/listen (v/looper-action-button) "click" (constantly-chan [:invoke-looper])) bus)
-      (d/update-settings! conn {:ready? true}))
-
-    (go-sub* pub :video-load [_ video-id] (chan 1 (distinct))
-      (track/track-video-load video-id)
-      (d/load-loops! conn (d/loops-for-video-on-storage video-id)))
+      (om/add-root! reconciler ui/LoopPage (v/dialog-container))
+      #_ (async/pipe (r/listen (v/looper-action-button) "click" (constantly-chan [:invoke-looper])) bus)
+      #_(d/update-settings! conn {:ready? true}))
 
     (go-sub pub :video-load [_ video-id]
-      (d/set-current-video! conn video-id))
+      (println "set current video" video-id)
+      #_(d/set-current-video! conn video-id))
 
     (go-sub pub :time-update _
-      (if-let [loop (d/current-loop @conn)]
-        (loop-back (yt/get-video) loop)))
+      #_(if-let [loop (d/current-loop @conn)]
+          (loop-back (yt/get-video) loop)))
 
     (go-sub pub :show-dialog _
-      (d/set-dialog-visibility! conn true))
+      #_(d/set-dialog-visibility! conn true))
 
     (go-sub pub :hide-dialog _
-      (d/set-dialog-visibility! conn false))
+      #_(d/set-dialog-visibility! conn false))
 
     (go-sub pub :invoke-looper _
-      (if-not (v/dialog-el)
-        (put! bus [:show-dialog])))
+      (println "invoke looper")
+      #_(if-not (v/dialog-el)
+          (put! bus [:show-dialog])))
 
     (go-sub pub :select-loop [_ loop]
-      (d/select-loop! conn loop)
+      #_(d/select-loop! conn loop)
       (if loop (track/track-loop-selected) (track/track-loop-disabled))
       (if loop (dom/video-seek! (yt/get-video) (:loop/start loop))))
 
-    (go-sub pub :create-loop _
+    #_ (go-sub pub :create-loop _
       (track/track-loop-created)
       (d/create-from-new-loop! conn)
       (sync-loops! @conn))
 
-    (go-sub pub :rename-loop [_ loop]
+    #_ (go-sub pub :rename-loop [_ loop]
       (when-let [new-label (js/prompt (t "new_loop_name") (:loop/label loop))]
         (track/track-loop-renamed)
         (d/rename-loop! conn loop new-label))
       (sync-loops! @conn))
 
-    (go-sub pub :remove-loop [_ loop]
+    #_ (go-sub pub :remove-loop [_ loop]
       (track/track-loop-removed)
       (d/remove-loop! conn loop)
       (sync-loops! @conn))
 
-    (go-sub pub :update-new-start [_ val]
+    #_ (go-sub pub :update-new-start [_ val]
       (d/update-new-loop! conn {:loop/start val}))
 
-    (go-sub pub :update-new-finish [_ val]
+    #_ (go-sub pub :update-new-finish [_ val]
       (d/update-new-loop! conn {:loop/finish val}))
 
     (go-sub pub :set-playback-rate [_ rate]
@@ -141,6 +124,6 @@
       (dom/video-playback-rate! (yt/get-video) rate))
 
     (go-sub pub :export-data _
-      (.log js/console (d/export-data)))
+      #_(.log js/console (d/export-data)))
 
-    looper))
+    #_looper))

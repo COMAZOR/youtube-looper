@@ -11,7 +11,7 @@
                  [devcards "0.2.1" :exclusions [org.omcljs/om]]
                  [figwheel-sidecar "0.5.0-1" :scope "test"]
                  [org.clojure/core.async "0.2.374"]
-                 [org.omcljs/om "1.0.0-alpha22"]
+                 [org.omcljs/om "1.0.0-alpha23"]
                  [me.raynes/fs "1.4.6"]
                  [enfocus "2.1.1"]
                  [datascript "0.13.3"]
