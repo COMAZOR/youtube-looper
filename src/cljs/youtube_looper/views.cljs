@@ -138,9 +138,8 @@
 
 (defn dialog-el [] ($ ($ MAIN_CONTAINER_SELECTOR) ".ytl-dialog"))
 
-(defn block-propagation [el]
+(defn block-key-propagation [el]
   (doto el
-    (dom/listen "click" #(.stopPropagation %))
     (dom/listen "keydown" #(.stopPropagation %))
     (dom/listen "keyup" #(.stopPropagation %))
     (dom/listen "keypress" #(.stopPropagation %))))
@@ -153,7 +152,7 @@
         (dom/set-style! {:z-index 10
                          :position "absolute"
                          :bottom "52px" :right "12px"})
-        (block-propagation)
+        (block-key-propagation)
         (dom/append-to! ($ "#movie_player")))))
 
 (defn loop-bar []

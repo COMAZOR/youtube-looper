@@ -4,7 +4,6 @@
             [goog.object :as gobj]
             [goog.dom :as gdom]
             [goog.style :as style]
-            [youtube-looper.next.parser :as p]
             [youtube-looper.next.styles :as s :refer [css]]))
 
 ; Helpers
@@ -172,7 +171,6 @@
   Object
   (render [this]
           (let [{:keys [track/loops] :as track} (om/props this)]
-            (println "render manager" track)
             (dom/div nil
               (apply dom/div nil (->> (map #(om/computed % {:on-delete    (partial delete-loop this %)
                                                             :on-select    (partial select-loop this %)
@@ -195,7 +193,6 @@
   Object
   (render [this]
           (let [{:keys [app/current-track] :as props} (om/props this)]
-            (println "rendering page" props)
             (dom/div nil
               (portal {:append-to ".ytp-progress-list"}
                 (track-loop-overlay current-track))
