@@ -59,23 +59,26 @@
 (defn portal [props & children]
   (portal-factory (assoc props :children children)))
 
-(defn input [{:keys [value onChange]}]
+(defn input [{:keys [value onChange] :as props}]
   (dom/input
-    #js {:value    (or value "")
-         :onChange #(onChange (.. % -target -value))}))
+    (clj->js (merge props
+                    {:value    (or value "")
+                     :onChange #(onChange (.. % -target -value))}))))
 
 (defn numeric-input [{:keys [value onChange] :as props}]
   (js/React.createElement "input"
-                          #js {:value    (or value "")
-                               :onChange #(let [value (.. % -target -value)]
-                                           (cond
-                                             (re-find #"^\d+(\.\d+)?$" value) (onChange (js/parseFloat value))
-                                             (= "" value) (onChange "")))}))
+                          (clj->js (merge props
+                                          {:value    (or value "")
+                                           :onChange #(let [value (.. % -target -value)]
+                                                       (cond
+                                                         (re-find #"^\d+(\.\d+)?$" value) (onChange (js/parseFloat value))
+                                                         (= "" value) (onChange "")))}))))
 
-(defn state-input [c {:keys [name] :as options}]
+(defn state-input [c {:keys [name style] :as options}]
   (let [value (om/get-state c name)
         comp (get options :comp input)]
     (comp {:value    value
+           :style style
            :onChange #(om/update-state! c merge {name %})})))
 
 ; Youtube Components
@@ -133,8 +136,8 @@
   (render [this]
           (let [{:keys [on-submit]} (om/props this)]
             (dom/div nil
-              (state-input this {:name :loop/start :comp numeric-input})
-              (state-input this {:name :loop/finish :comp numeric-input})
+              (state-input this {:name :loop/start :comp numeric-input :style (css s/time-input)})
+              (state-input this {:name :loop/finish :comp numeric-input :style (css s/time-input)})
               (dom/button #js {:onClick
                                #(when (valid-loop? (om/get-state this))
                                  (on-submit (assoc (om/get-state this) :db/id (random-uuid)))
@@ -176,7 +179,7 @@
   Object
   (render [this]
           (let [{:keys [track/loops] :as track} (om/props this)]
-            (dom/div nil
+            (dom/div #js {:style (css s/popup-container)}
               (apply dom/div nil (->> (map #(om/computed % {:on-delete    (partial delete-loop this %)
                                                             :on-select    (partial select-loop this %)
                                                             :update-label (partial update-label this %)
