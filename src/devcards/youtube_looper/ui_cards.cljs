@@ -8,10 +8,11 @@
   (:require-macros [devcards.core :as dc :refer [defcard deftest dom-node]]))
 
 (def track
-  {:youtube/id  "123"
-   :db/id       (random-uuid)
-   :track/loops [{:db/id (random-uuid) :loop/label "full" :loop/start 5 :loop/finish 50}
-                 {:db/id (random-uuid) :loop/label "intro" :loop/start 60 :loop/finish 70}]})
+  {:youtube/id     "123"
+   :db/id          (random-uuid)
+   :track/duration 100
+   :track/loops    [{:db/id (random-uuid) :loop/label "full" :loop/start 5 :loop/finish 50}
+                    {:db/id (random-uuid) :loop/label "intro" :loop/start 60 :loop/finish 70}]})
 
 (def fake-store
   (p/map-kv-store {"123" track}))
@@ -20,13 +21,13 @@
   (om/reconciler
     {:state  {:youtube/current-video "123"
               :app/visible?          true
-              :app/current-track track}
+              :app/current-track     (p/kv-get fake-store "123")}
      :parser p/parser
      :send   (fn [{:keys [remote]} cb]
                (println "REMOTE" remote)
-               (js/setTimeout 
+               (js/setTimeout
                  #(cb (p/remote-parser {:store fake-store}
-                                      remote))
+                                       remote))
                  200))}))
 
 (def reconciler-local-storage

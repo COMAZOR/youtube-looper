@@ -91,7 +91,6 @@
   (if (and loop duration)
     (let [start-pct (-> (/ start duration))
           size-pct (/ (- finish start) duration)]
-      (println "render bar" start-pct size-pct)
       (youtube-progress-bar {:offset start-pct
                              :scale  size-pct}))
     (js/React.DOM.noscript)))
@@ -145,12 +144,13 @@
 (def new-loop-form (om/factory NewLoopForm))
 
 (defn create-loop [c loop]
-  (let [id (-> c om/props :db/id)]
-    (om/transact! c `[(track/new-loop {:loop ~loop :db/id ~id})])))
+  (let [props (-> c om/props)
+        data (assoc props :loop loop)]
+    (om/transact! c `[(track/new-loop ~data)])))
 
 (defn delete-loop [c loop]
   (let [id (-> c om/props :db/id)]
-    (om/transact! c `[(track/remove-loop {:loop ~loop :db/id ~id})])))
+    (om/transact! c `[(track/remove-loop {:loop ~loop :db/id ~id}) :app/current-track])))
 
 (defn update-label [c loop label]
   (let [id (-> c om/props :db/id)
@@ -199,7 +199,6 @@
   Object
   (render [this]
           (let [{:keys [app/current-track app/visible?] :as props} (om/props this)]
-            (println "loop page" props)
             (dom/div nil
               (portal {:append-to ".ytp-progress-list"}
                 (track-loop-overlay current-track))

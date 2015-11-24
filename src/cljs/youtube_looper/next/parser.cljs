@@ -6,8 +6,7 @@
 
 (defn read-track [st {:keys [track/selected-loop] :as track}]
   (cond-> (update track :track/loops #(map (partial get-in st) %))
-      selected-loop (assoc :track/selected-loop (get-in st selected-loop))
-      selected-loop (assoc :track/duration 100)))
+      selected-loop (assoc :track/selected-loop (get-in st selected-loop))))
 
 ; Client Parser
 
@@ -104,7 +103,7 @@
 (defmulti remote-mutate om/dispatch)
 
 (defmethod remote-mutate 'track/new-loop [{:keys [store]} _ {:keys [youtube/id loop] :as base}]
-  {:action #(kv-update! store id (fn [track] (-> (or track (assoc (blank-track id) :db/id (:db/id base)))
+  {:action #(kv-update! store id (fn [track] (-> (or track (dissoc base :loop))
                                                  (update :track/loops conj loop))))})
 
 (defn find-loop [{:keys [track/loops]} {:keys [db/id]}]

@@ -149,7 +149,7 @@
       (doto (dom/create-element! "div")
         (dom/add-class! "ytp-looper-container")
         (dom/set-properties! {"data-layer" 9})
-        (dom/set-style! {:z-index 10
+        (dom/set-style! {:z-index 20
                          :position "absolute"
                          :bottom "52px" :right "12px"})
         (block-key-propagation)
