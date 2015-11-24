@@ -95,6 +95,13 @@
              (:db/id sample-loop) sample-loop}}
            @state))))
 
+(deftest test-toggle-visibility
+  (let [state (atom {:app/visible? true})]
+    (p/parser {:state state} '[(app/toggle-visibility)])
+    (is (= false (:app/visible? @state)))
+    (p/parser {:state state} '[(app/toggle-visibility)])
+    (is (= true (:app/visible? @state)))))
+
 ;; Remote Parser Tests
 
 (def sample-track

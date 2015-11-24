@@ -36,23 +36,23 @@
   (apply dom/div nil children))
 
 (defui Portal
-    Object
-    (componentDidMount [this]
-                       (let [props (om/props this)
-                             node (create-portal-node props)]
-                         (gobj/set this "node" node)
-                         (render-subtree-into-container this (portal-render-children (:children props)) node)))
+  Object
+  (componentDidMount [this]
+                     (let [props (om/props this)
+                           node (create-portal-node props)]
+                       (gobj/set this "node" node)
+                       (render-subtree-into-container this (portal-render-children (:children props)) node)))
 
-    (componentWillUnmount [this]
-                          (when-let [node (gobj/get this "node")]
-                            (js/ReactDOM.unmountComponentAtNode node)
-                            (gdom/removeNode node)))
+  (componentWillUnmount [this]
+                        (when-let [node (gobj/get this "node")]
+                          (js/ReactDOM.unmountComponentAtNode node)
+                          (gdom/removeNode node)))
 
-    (componentWillReceiveProps [this props]
-                               (let [node (gobj/get this "node")]
-                                 (render-subtree-into-container this (portal-render-children (:children props)) node)))
+  (componentWillReceiveProps [this props]
+                             (let [node (gobj/get this "node")]
+                               (render-subtree-into-container this (portal-render-children (:children props)) node)))
 
-    (render [this] (js/React.DOM.noscript)))
+  (render [this] (js/React.DOM.noscript)))
 
 (def portal-factory (om/factory Portal))
 
@@ -155,7 +155,7 @@
 (defn update-label [c loop label]
   (let [id (-> c om/props :db/id)
         new-loop (assoc loop :loop/label label)]
-    (om/transact! c `[(track/update-loop {:loop ~new-loop :db/id ~id})]))) 
+    (om/transact! c `[(track/update-loop {:loop ~new-loop :db/id ~id})])))
 
 (defn inc-start [c loop]
   (let [id (-> c om/props :db/id)
@@ -180,7 +180,7 @@
               (apply dom/div nil (->> (map #(om/computed % {:on-delete    (partial delete-loop this %)
                                                             :on-select    (partial select-loop this %)
                                                             :update-label (partial update-label this %)
-                                                            :inc-start (partial inc-start this %)}) loops)
+                                                            :inc-start    (partial inc-start this %)}) loops)
                                       (map loop-row)))
               (new-loop-form {:on-submit #(create-loop this %)})))))
 
@@ -207,7 +207,8 @@
                                       :verticalAlign "top"}}
                 (dom/button #js {:className "ytp-button"
                                  :title     "Show Loops"
-                                 :style     (css s/youtube-action-button)} "AB"))
+                                 :style     (css s/youtube-action-button)
+                                 :onClick   #(om/transact! this '[(app/toggle-visibility)])} "AB"))
               (if visible? (loop-manager current-track))))))
 
 (def loop-page (om/factory LoopPage))

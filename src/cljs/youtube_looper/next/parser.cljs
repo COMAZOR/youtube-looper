@@ -57,6 +57,9 @@
 (defmethod mutate 'track/select-loop [{:keys [state ast]} _ {:keys [db/id loop]}]
   {:action (fn [] (swap! state #(-> (assoc-in % [:entities/by-id id :track/selected-loop] (mk-ref loop)))))})
 
+(defmethod mutate 'app/toggle-visibility [{:keys [state]} _ _]
+  {:action (fn [] (swap! state update :app/visible? not))})
+
 (def parser (om/parser {:read read :mutate mutate}))
 
 ; Key Value Stores
