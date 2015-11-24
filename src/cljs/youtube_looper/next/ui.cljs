@@ -1,8 +1,9 @@
 (ns youtube-looper.next.ui
   (:require [om.next :as om :refer-macros [defui]]
             [om.dom :as dom]
-            [wilkerdev.util.dom :as wd]
             [goog.object :as gobj]
+            [goog.dom :as gdom]
+            [goog.style :as style]
             [youtube-looper.next.parser :as p]
             [youtube-looper.next.styles :as s :refer [css]]))
 
@@ -17,22 +18,22 @@
   (when-let [f (om/get-computed c name)]
     (apply f args)))
 
+; Helper Components
+
 (defn render-subtree-into-container [parent c node]
   (js/ReactDOM.unstable_renderSubtreeIntoContainer parent c node))
 
-; Helper Components
+(defn $ [s] (.querySelector js/document s))
 
 (defn create-portal-node [props]
-  (let [node (doto (wd/create-element! "div")
-               (wd/set-style! (:style props)))]
-    (js/console.log "creating node" props)
+  (let [node (doto (gdom/createElement "div")
+               (style/setStyle (clj->js (:style props))))]
     (cond
-      (:append-to props) (wd/append-to! node (wd/$ (:append-to props)))
-      (:insert-after props) (wd/insert-after! node (wd/$ (:insert-after props))))
+      (:append-to props) (gdom/append ($ (:append-to props)) node)
+      (:insert-after props) (gdom/insertSiblingAfter node ($ (:insert-after props))))
     node))
 
 (defn portal-render-children [children]
-  (js/console.log "render children" children)
   (apply dom/div nil children))
 
 (defui Portal
@@ -44,16 +45,14 @@
                          (render-subtree-into-container this (portal-render-children (:children props)) node)))
 
     (componentWillUnmount [this]
-                          (let [node (gobj/get this "node")]
+                          (when-let [node (gobj/get this "node")]
                             (js/ReactDOM.unmountComponentAtNode node)
-                            (wd/remove-node! node)))
+                            (gdom/removeNode node)))
 
     (componentWillReceiveProps [this props]
                                (let [node (gobj/get this "node")]
                                  (render-subtree-into-container this (portal-render-children (:children props)) node)))
 
-    (shouldComponentUpdate [this] true)
-    
     (render [this] (js/React.DOM.noscript)))
 
 (def portal-factory (om/factory Portal))
