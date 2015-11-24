@@ -22,27 +22,44 @@
 
 ; Helper Components
 
+(defn create-portal-node [props]
+  (let [node (doto (wd/create-element! "div")
+               (wd/set-style! (:style props)))]
+    (js/console.log "creating node" props)
+    (cond
+      (:append-to props) (wd/append-to! node (wd/$ (:append-to props)))
+      (:insert-after props) (wd/insert-after! node (wd/$ (:insert-after props))))
+    node))
+
+(defn portal-render-children [children]
+  (js/console.log "render children" children)
+  (apply dom/div nil children))
+
 (defui Portal
-  Object
-  (componentDidMount [this]
-                     (let [props (om/props this)
-                           node (doto (wd/create-element! "div")
-                                  (wd/set-style! (:style props)))]
-                       (cond
-                         (:append-to props) (wd/append-to! node (wd/$ (:append-to props)))
-                         (:insert-after props) (wd/insert-after! node (wd/$ (:insert-after props))))
+    Object
+    (componentDidMount [this]
+                       (let [props (om/props this)
+                             node (create-portal-node props)]
+                         (gobj/set this "node" node)
+                         (render-subtree-into-container this (portal-render-children (:children props)) node)))
 
-                       (gobj/set this "node" node)
-                       (render-subtree-into-container this (apply dom/div nil (om/children this)) node)))
+    (componentWillUnmount [this]
+                          (let [node (gobj/get this "node")]
+                            (js/ReactDOM.unmountComponentAtNode node)
+                            (wd/remove-node! node)))
 
-  (componentWillUnmount [this]
-                        (let [node (gobj/get this "node")]
-                          (js/ReactDOM.unmountComponentAtNode node)
-                          (wd/remove-node! node)))
+    (componentWillReceiveProps [this props]
+                               (let [node (gobj/get this "node")]
+                                 (render-subtree-into-container this (portal-render-children (:children props)) node)))
 
-  (render [this] (js/React.DOM.noscript)))
+    (shouldComponentUpdate [this] true)
+    
+    (render [this] (js/React.DOM.noscript)))
 
-(def portal (om/factory Portal))
+(def portal-factory (om/factory Portal))
+
+(defn portal [props & children]
+  (portal-factory (assoc props :children children)))
 
 (defn input [{:keys [value onChange]}]
   (dom/input
@@ -68,26 +85,18 @@
 (defn youtube-progress-bar [{:keys [color offset scale]}]
   (dom/div #js {:style (css s/youtube-progress
                             {:background (or color "rgba(6, 255, 0, 0.35)")
-                             :left       (str offset "%")
+                             :left       (str (* offset 100) "%")
                              :transform  (str "scaleX(" scale ")")})}))
 
-(defui TrackLoopOverlay
-  static om/Ident
-  (ident [this {:keys [db/id]}]
-         [:entities/by-id id])
-  
-  static om/IQuery
-  (query [this] [:track/duration {:track/loop [:loop/start :loop/finish]}])
-  
-  Object
-  (render [this]
-          (let [{:keys [track/duration] {:keys [loop/start loop/finish]} :track/loop} (om/props this)
-                start-pct (-> (/ start duration) (* 100))
-                size-pct (/ (- finish start) duration)]
-            (youtube-progress-bar {:offset start-pct
-                                   :scale size-pct}))))
-
-(def track-loop-overlay (om/factory TrackLoopOverlay {:keyfn :db/id}))
+(defn track-loop-overlay [{:keys                                     [track/duration]
+                           {:keys [loop/start loop/finish] :as loop} :track/selected-loop}]
+  (if (and loop duration)
+    (let [start-pct (-> (/ start duration))
+          size-pct (/ (- finish start) duration)]
+      (println "render bar" start-pct size-pct)
+      (youtube-progress-bar {:offset start-pct
+                             :scale  size-pct}))
+    (js/React.DOM.noscript)))
 
 ; Looper Components
 
@@ -95,7 +104,7 @@
   static om/Ident
   (ident [this {:keys [db/id]}]
          [:entities/by-id id])
-  
+
   static om/IQuery
   (query [this]
          [:loop/label :loop/start :loop/finish])
@@ -112,6 +121,7 @@
                   (dom/i nil "No Label")))
               (dom/div nil start)
               (dom/div nil finish)
+              (dom/a #js {:href "#" :onClick (pd #(call-computed this :on-select))} "Select")
               (dom/a #js {:href "#" :onClick (pd #(call-computed this :on-delete))} "Delete")))))
 
 (def loop-row (om/factory LoopRow {:keyfn :db/id}))
@@ -149,18 +159,24 @@
     (om/transact! c `[(track/remove-loop {:loop ~loop :db/id ~id})
                       (track/new-loop {:loop ~new-loop :db/id ~id})])))
 
+(defn select-loop [c loop]
+  (let [id (-> c om/props :db/id)]
+    (om/transact! c `[(track/select-loop {:loop ~loop :db/id ~id}) :app/current-track])))
+
 (defui LoopManager
   static om/IQuery
-  (query [this] [{:track/loops (om/get-query LoopRow)}])
+  (query [this] [{:track/loops (om/get-query LoopRow)} :track/duration {:track/selected-loop [:loop/start :loop/finish]}])
 
   static om/Ident
   (ident [this {:keys [db/id]}] [:entities/by-id id])
 
   Object
   (render [this]
-          (let [{:keys [track/loops]} (om/props this)]
+          (let [{:keys [track/loops] :as track} (om/props this)]
+            (println "render manager" track)
             (dom/div nil
-              (apply dom/div nil (->> (map #(om/computed % {:on-delete (partial delete-loop this %)
+              (apply dom/div nil (->> (map #(om/computed % {:on-delete    (partial delete-loop this %)
+                                                            :on-select    (partial select-loop this %)
                                                             :update-label (partial update-label this %)}) loops)
                                       (map loop-row)))
               (new-loop-form {:on-submit #(create-loop this %)})))))
@@ -183,13 +199,13 @@
             (println "rendering page" props)
             (dom/div nil
               (portal {:append-to ".ytp-progress-list"}
-                (track-loop-overlay {:track/duration 100 :track/loop {:loop/start 10 :loop/finish 20}}))
+                (track-loop-overlay current-track))
               (portal {:insert-after ".ytp-settings-button"
-                       :style {:display "inline-block"
-                               :verticalAlign "top"}}
+                       :style        {:display       "inline-block"
+                                      :verticalAlign "top"}}
                 (dom/button #js {:className "ytp-button"
-                                 :title "Show Loops"
-                                 :style (css s/youtube-action-button)} "AB"))
+                                 :title     "Show Loops"
+                                 :style     (css s/youtube-action-button)} "AB"))
               (loop-manager current-track)))))
 
 (def loop-page (om/factory LoopPage))

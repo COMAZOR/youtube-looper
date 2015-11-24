@@ -2,14 +2,49 @@
   (:require-macros [cljs.core.async.macros :refer [go]]
                    [wilkerdev.util.macros :refer [dochan go-sub go-sub* all-or-nothing]])
   (:require [cljs.core.async :refer [chan put! <! >! close!] :as async]
-            [om.next :as om]
-            [wilkerdev.util.dom :as dom]
+            [om.next :as om :refer-macros [defui]]
+            [wilkerdev.util.dom :as wd]
             [wilkerdev.util.reactive :as r]
             [youtube-looper.next.parser :as p]
             [youtube-looper.next.ui :as ui]
             [youtube-looper.youtube :as yt]
             [youtube-looper.views :as v]
-            [youtube-looper.track :as track]))
+            [youtube-looper.track :as track]
+            [om.dom :as dom]
+            [wilkerdev.util.dom :as wd]))
+
+(def app-state (atom {:count 0}))
+
+(defn read [{:keys [state] :as env} key params]
+  (let [st @state]
+    (if-let [[_ value] (find st key)]
+      {:value value}
+      {:value :not-found})))
+
+(defn mutate [{:keys [state] :as env} key params]
+  (if (= 'increment key)
+    {:value {:keys [:count]}
+     :action #(swap! state update-in [:count] inc)}
+    {:value :not-found}))
+
+(defui Counter
+       static om/IQuery
+       (query [this]
+              [:count])
+       Object
+       (render [this]
+               (let [{:keys [count]} (om/props this)]
+                 (dom/div nil
+                          (dom/span nil (str "Count: " count))
+                          (dom/button
+                            #js {:onClick
+                                 (fn [e] (om/transact! this '[(increment)]))}
+                            "Click me!")))))
+
+(def b-reconciler
+  (om/reconciler
+    {:state app-state
+     :parser (om/parser {:read read :mutate mutate})}))
 
 (enable-console-print!)
 
@@ -22,9 +57,9 @@
 (defn constantly-chan [value] (chan 1 (map (constantly value))))
 
 (defn loop-back [video {:keys [loop/start loop/finish]}]
-  (let [position (dom/video-current-time video)]
+  (let [position (wd/video-current-time video)]
     (when (> position finish)
-      (dom/video-seek! video start))))
+      (wd/video-seek! video start))))
 
 (defn debug-input [label [msg :as i]]
   (let [ignored-messages #{:time-update}]
@@ -68,7 +103,7 @@
       (track/track-extension-loaded)
 
       (setup-video-time-update bus)
-      (om/add-root! reconciler ui/LoopPage (v/dialog-container))
+      (om/add-root! b-reconciler Counter (v/dialog-container))
       #_ (async/pipe (r/listen (v/looper-action-button) "click" (constantly-chan [:invoke-looper])) bus)
       #_(d/update-settings! conn {:ready? true}))
 
@@ -94,7 +129,7 @@
     (go-sub pub :select-loop [_ loop]
       #_(d/select-loop! conn loop)
       (if loop (track/track-loop-selected) (track/track-loop-disabled))
-      (if loop (dom/video-seek! (yt/get-video) (:loop/start loop))))
+      (if loop (wd/video-seek! (yt/get-video) (:loop/start loop))))
 
     #_ (go-sub pub :create-loop _
       (track/track-loop-created)
@@ -120,7 +155,7 @@
 
     (go-sub pub :set-playback-rate [_ rate]
       (track/track-playback-rate-changed rate)
-      (dom/video-playback-rate! (yt/get-video) rate))
+      (wd/video-playback-rate! (yt/get-video) rate))
 
     (go-sub pub :export-data _
       #_(.log js/console (d/export-data)))

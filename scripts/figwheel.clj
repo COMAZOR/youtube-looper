@@ -3,7 +3,7 @@
 
 (ra/start-figwheel!
   {:figwheel-options {:server-port 3450}
-   :build-ids        ["chrome" "cards"]
+   :build-ids        ["chrome" "cards" "demo"]
    :all-builds
                      [
                       {:id           "chrome"
@@ -13,14 +13,16 @@
                                       :verbose    true
                                       :pretty-print  true}}
 
-                      #_ {:id           "dev"
+                      {:id           "demo"
                        :figwheel     true
-                       :source-paths ["src"]
-                       :compiler     {:main       'om-tutorial.core
-                                      :asset-path "js"
-                                      :output-to  "resources/public/js/main.js"
-                                      :output-dir "resources/public/js"
-                                      :verbose    true}}
+                       :source-paths ["src/cljs" "src/demo"]
+                       :compiler     {:main                 'youtube-looper.demo
+                                      :source-map-timestamp true
+                                      :asset-path           "js/out-demo"
+                                      :output-to            "resources/public/js/demo.js"
+                                      :output-dir           "resources/public/js/out-demo"
+                                      :verbose              false}}
+                      
                       {:id           "cards"
                        :figwheel     {:devcards true}
                        :source-paths ["src/cljs" "src/devcards"]

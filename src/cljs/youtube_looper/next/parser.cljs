@@ -4,8 +4,10 @@
 
 (defn mk-ref [{:keys [db/id]}] [:entities/by-id id])
 
-(defn read-track [st track]
-  (update track :track/loops #(map (partial get-in st) %)))
+(defn read-track [st {:keys [track/selected-loop] :as track}]
+  (cond-> (update track :track/loops #(map (partial get-in st) %))
+      selected-loop (assoc :track/selected-loop (get-in st selected-loop))
+      selected-loop (assoc :track/duration 100)))
 
 ; Client Parser
 
@@ -33,18 +35,6 @@
        (= 2 (count value))
        (keyword? (first value))))
 
-(defn reduce-path [state path]
-  (loop [path path
-         out-path []]
-    (let [[h & t] path]
-      (if h
-        (let [out-path (conj out-path h)
-              value (get-in state out-path)]
-          (if (ref-value? value)
-            (recur t value)
-            (recur t out-path)))
-        out-path))))
-
 (defn remove-entity [entity]
   #(filterv (fn [e] (not= (:db/id e) (:db/id entity))) %))
 
@@ -64,6 +54,9 @@
   {:action (fn [] (swap! state #(-> (update-in % [:entities/by-id id :track/loops] (remove-ref loop))
                                     (update :entities/by-id dissoc (:db/id loop)))))
    :remote (assoc-in ast [:params :youtube/id] (get-in @state [:entities/by-id id :youtube/id]))})
+
+(defmethod mutate 'track/select-loop [{:keys [state ast]} _ {:keys [db/id loop]}]
+  {:action (fn [] (swap! state #(-> (assoc-in % [:entities/by-id id :track/selected-loop] (mk-ref loop)))))})
 
 (def parser (om/parser {:read read :mutate mutate}))
 

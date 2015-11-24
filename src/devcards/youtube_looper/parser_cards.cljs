@@ -41,14 +41,14 @@
                                    :track/loops [(mk-ref sample-loop)]}
              (:db/id sample-loop) sample-loop}}
            @state))
-    
+
     (is (= [(list 'track/new-loop {:db/id "123" :youtube/id "yid" :loop sample-loop})]
            (p/parser {:state state}
                      [(list 'track/new-loop {:db/id "123" :loop sample-loop})]
                      :remote)))))
 
 (deftest test-remove-loop
-  (let [state (atom {:entities/by-id {"123" {:db/id "123" :youtube/id "a12" :track/loops [(mk-ref sample-loop)]}
+  (let [state (atom {:entities/by-id {"123"                {:db/id "123" :youtube/id "a12" :track/loops [(mk-ref sample-loop)]}
                                       (:db/id sample-loop) sample-loop}})]
     (p/parser {:state state}
               `[(track/remove-loop {:db/id "123" :loop ~sample-loop})])
@@ -64,23 +64,36 @@
                      :remote)))))
 
 (deftest test-update-loop
-  (let [state (atom {:entities/by-id {"123" {:db/id "123" :youtube/id "a12" :track/loops [(mk-ref sample-loop)]}
+  (let [state (atom {:entities/by-id {"123"                {:db/id "123" :youtube/id "a12" :track/loops [(mk-ref sample-loop)]}
                                       (:db/id sample-loop) sample-loop}})
         updated-loop (assoc sample-loop :loop/label "new label")]
     (p/parser {:state state}
               `[(track/update-loop {:db/id "123" :loop ~updated-loop})])
     (is (= {:entities/by-id
             {"123"
-             {:db/id       "123"
-              :youtube/id  "a12"
-              :track/loops [(mk-ref sample-loop)]}
+                                  {:db/id       "123"
+                                   :youtube/id  "a12"
+                                   :track/loops [(mk-ref sample-loop)]}
              (:db/id sample-loop) updated-loop}}
            @state))
-    
+
     (is (= [(list 'track/update-loop {:db/id "123" :youtube/id "a12" :loop updated-loop})]
            (p/parser {:state state}
                      [(list 'track/update-loop {:db/id "123" :loop updated-loop})]
                      :remote)))))
+
+(deftest test-select-loop
+  (let [state (atom {:entities/by-id {"123"                {:db/id "123" :youtube/id "a12" :track/loops [(mk-ref sample-loop)]}
+                                      (:db/id sample-loop) sample-loop}})]
+    (p/parser {:state state}
+              `[(track/select-loop {:db/id "123" :loop ~sample-loop})])
+    (is (= {:entities/by-id
+            {"123"                {:db/id               "123"
+                                   :youtube/id          "a12"
+                                   :track/selected-loop (mk-ref sample-loop)
+                                   :track/loops         [(mk-ref sample-loop)]}
+             (:db/id sample-loop) sample-loop}}
+           @state))))
 
 ;; Remote Parser Tests
 

@@ -10,7 +10,8 @@
 (def fake-store
   (p/map-kv-store {"123" {:youtube/id  "123"
                           :db/id       (random-uuid)
-                          :track/loops [{:db/id (random-uuid) :loop/label "full" :loop/start 5 :loop/finish 200}]}}))
+                          :track/loops [{:db/id (random-uuid) :loop/label "full" :loop/start 5 :loop/finish 50}
+                                        {:db/id (random-uuid) :loop/label "intro" :loop/start 60 :loop/finish 70}]}}))
 
 (def reconciler
   (om/reconciler
