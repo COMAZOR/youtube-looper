@@ -12,39 +12,6 @@
             [om.dom :as dom]
             [wilkerdev.util.dom :as wd]))
 
-(def app-state (atom {:count 0}))
-
-(defn read [{:keys [state] :as env} key params]
-  (let [st @state]
-    (if-let [[_ value] (find st key)]
-      {:value value}
-      {:value :not-found})))
-
-(defn mutate [{:keys [state] :as env} key params]
-  (if (= 'increment key)
-    {:value {:keys [:count]}
-     :action #(swap! state update-in [:count] inc)}
-    {:value :not-found}))
-
-(defui Counter
-  static om/IQuery
-  (query [this]
-         [:count])
-  Object
-  (render [this]
-          (let [{:keys [count]} (om/props this)]
-            (dom/div nil
-              (dom/span nil (str "Count: " count))
-              (dom/button
-                #js {:onClick
-                     (fn [e] (om/transact! this '[(increment)]))}
-                "Click me!")))))
-
-(def b-reconciler
-  (om/reconciler
-    {:state app-state
-     :parser (om/parser {:read read :mutate mutate})}))
-
 (enable-console-print!)
 
 (def ^:dynamic *log-debug* false)
@@ -69,13 +36,6 @@
 (defn setup-video-time-update [bus]
   (async/pipe (r/listen (yt/get-video) "timeupdate" (constantly-chan [:time-update])) bus))
 
-(defn wait-for-presence
-  ([f] (wait-for-presence f 10))
-  ([f delay]
-   (go
-     (while (not (f)) (<! (async/timeout delay)))
-     (f))))
-
 (defonce store (p/map-kv-store {"demo-id" {:youtube/id  "demo-id"
                                            :db/id       (random-uuid)
                                            :track/loops [{:db/id (random-uuid) :loop/label "full" :loop/start 5 :loop/finish 50}
@@ -99,8 +59,7 @@
     (async/put! bus [:video-load])
 
     (go-sub* pub :video-load _ (chan 1 (take 1))
-      (om/add-root! reconciler ui/LoopPage (wd/$ ".app-container"))
-      #_ (setup-video-time-update bus))
+      (om/add-root! reconciler ui/LoopPage (wd/$ ".app-container")))
 
     (go-sub pub :video-load [_ video-id]
       (println "set current video" video-id))

@@ -142,3 +142,12 @@
             :db/id       "abc"
             :track/loops [(get-in sample-track [:track/loops 1])]}
            (p/kv-get store "123")))))
+
+(deftest test-remote-track-update-loop
+  (let [store (p/map-kv-store {"123" sample-track})
+        loop (get-in sample-track [:track/loops 0])
+        loop (update loop :loop/start inc)]
+    (println "updating loop" loop)
+    (p/remote-parser {:store store} `[(track/update-loop {:youtube/id "123" :loop ~loop})])
+    (is (= 6
+           (get-in (p/kv-get store "123") [:track/loops 0 :loop/start])))))

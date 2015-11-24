@@ -96,10 +96,6 @@
 (defmulti remote-read om/dispatch)
 
 (defmethod remote-read :app/current-track [{:keys [store]} _ {:keys [youtube/id]}]
-  (println "remote reading id" id (or (kv-get store id)
-                                      (let [track (blank-track id)]
-                                        (kv-set! store id track)
-                                        track)))
   {:value (or (kv-get store id)
               (let [track (blank-track id)]
                 (kv-set! store id track)
@@ -110,6 +106,16 @@
 (defmethod remote-mutate 'track/new-loop [{:keys [store]} _ {:keys [youtube/id loop] :as base}]
   {:action #(kv-update! store id (fn [track] (-> (or track (assoc (blank-track id) :db/id (:db/id base)))
                                                  (update :track/loops conj loop))))})
+
+(defn find-loop [{:keys [track/loops]} {:keys [db/id]}]
+  (->> (keep-indexed #(if (= (:db/id %2) id) %) loops)
+       first))
+
+(defmethod remote-mutate 'track/update-loop [{:keys [store]} _ {:keys [youtube/id loop]}]
+  {:action
+   #(kv-update! store id
+     (fn [track]
+       (update-in track [:track/loops (find-loop track loop)] merge loop)))})
 
 (defmethod remote-mutate 'track/remove-loop [{:keys [store]} _ {:keys [youtube/id loop]}]
   {:action #(kv-update! store id (fn [track] (update-in track [:track/loops] (remove-entity loop))))})

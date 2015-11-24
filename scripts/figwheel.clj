@@ -3,7 +3,7 @@
 
 (ra/start-figwheel!
   {:figwheel-options {:server-port 3450}
-   :build-ids        ["chrome" "cards" "demo"]
+   :build-ids        ["chrome" "cards"]
    :all-builds
                      [
                       {:id           "chrome"

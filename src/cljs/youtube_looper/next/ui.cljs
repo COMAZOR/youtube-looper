@@ -118,6 +118,7 @@
                   label
                   (dom/i nil "No Label")))
               (dom/div nil start)
+              (dom/a #js {:href "#" :onClick (pd #(call-computed this :inc-start))} "Inc start")
               (dom/div nil finish)
               (dom/a #js {:href "#" :onClick (pd #(call-computed this :on-select))} "Select")
               (dom/a #js {:href "#" :onClick (pd #(call-computed this :on-delete))} "Delete")))))
@@ -154,8 +155,12 @@
 (defn update-label [c loop label]
   (let [id (-> c om/props :db/id)
         new-loop (assoc loop :loop/label label)]
-    (om/transact! c `[(track/remove-loop {:loop ~loop :db/id ~id})
-                      (track/new-loop {:loop ~new-loop :db/id ~id})])))
+    (om/transact! c `[(track/update-loop {:loop ~new-loop :db/id ~id})]))) 
+
+(defn inc-start [c loop]
+  (let [id (-> c om/props :db/id)
+        new-loop (update loop :loop/start inc)]
+    (om/transact! c `[(track/update-loop {:loop ~new-loop :db/id ~id}) :app/current-track])))
 
 (defn select-loop [c loop]
   (let [id (-> c om/props :db/id)]
@@ -174,7 +179,8 @@
             (dom/div nil
               (apply dom/div nil (->> (map #(om/computed % {:on-delete    (partial delete-loop this %)
                                                             :on-select    (partial select-loop this %)
-                                                            :update-label (partial update-label this %)}) loops)
+                                                            :update-label (partial update-label this %)
+                                                            :inc-start (partial inc-start this %)}) loops)
                                       (map loop-row)))
               (new-loop-form {:on-submit #(create-loop this %)})))))
 
@@ -188,11 +194,12 @@
 
 (defui LoopPage
   static om/IQuery
-  (query [this] [{:app/current-track (om/get-query LoopManager)}])
+  (query [this] [:app/visible? {:app/current-track (om/get-query LoopManager)}])
 
   Object
   (render [this]
-          (let [{:keys [app/current-track] :as props} (om/props this)]
+          (let [{:keys [app/current-track app/visible?] :as props} (om/props this)]
+            (println "loop page" props)
             (dom/div nil
               (portal {:append-to ".ytp-progress-list"}
                 (track-loop-overlay current-track))
@@ -202,6 +209,6 @@
                 (dom/button #js {:className "ytp-button"
                                  :title     "Show Loops"
                                  :style     (css s/youtube-action-button)} "AB"))
-              (loop-manager current-track)))))
+              (if visible? (loop-manager current-track))))))
 
 (def loop-page (om/factory LoopPage))
