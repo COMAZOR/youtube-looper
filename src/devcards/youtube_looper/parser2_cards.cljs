@@ -34,10 +34,13 @@
          (p/parser {:state (atom {:app/visible? true})}
                    [:app/visible?]))))
 
-(deftest test-fulfil-request
-  (is (= {}
-         (p/parser {:state (atom {:app/visible? true})}
-                   (om/get-query ui/LoopPage)))))
+(deftest test-select-loop
+  (let [state (atom {:db/id {"123" {:db/id               "123"
+                                    :track/selected-loop {}}}})]
+    (p/parser {:state state :ref [:db/id "123"]}
+      '[(track/select-loop nil)])
+    (is (= {:db/id {"123" {:db/id "123", :track/selected-loop nil}}}
+           @state))))
 
 (deftest test-remove-loop
   (let [sample-id (:db/id sample-loop)

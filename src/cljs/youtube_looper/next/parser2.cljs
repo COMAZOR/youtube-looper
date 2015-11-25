@@ -42,7 +42,7 @@
 
 (defmethod mutate 'track/select-loop
   [{:keys [state ref]} _ {:keys [db/id]}]
-  {:action (fn [] (swap! state assoc-in (conj ref :track/selected-loop) [:db/id id]))})
+  {:action (fn [] (swap! state assoc-in (conj ref :track/selected-loop) (if id [:db/id id])))})
 
 (defmethod mutate 'track/new-loop
   [{:keys [state ref]} _ {:keys [db/id] :as loop}]

@@ -187,7 +187,10 @@
                                                             :on-select (partial select-loop this %)
                                                             :selected  (= (get-in track [:track/selected-loop :db/id]) (:db/id %))}) loops)
                                       (map loop-row)))
-              (new-loop-form (om/computed new-loop {:on-submit #(create-loop this %)}))))))
+              (new-loop-form (om/computed new-loop {:on-submit #(create-loop this %)}))
+              (println "selected track" (:track/selected-loop track))
+              (if (:track/selected-loop track)
+                (dom/button #js {:onClick #(select-loop this nil)} "Clean loop selection"))))))
 
 (def loop-manager (om/factory LoopManager {:keyfn :db/id}))
 
