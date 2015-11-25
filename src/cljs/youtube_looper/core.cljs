@@ -47,12 +47,17 @@
 
 (defn read-selected-loop [state]
   (let [{:keys [app/current-track]} (p/parser {:state state} [{:app/current-track [{:track/selected-loop [:loop/start :loop/finish]}]}])]
-    (println "current track" current-track)
     (get current-track :track/selected-loop)))
 
 (defn youtube-video-position []
   (let [pos (some-> (yt/get-video) (wd/video-current-time))]
     (if (js/isNaN pos) nil pos)))
+
+(defn inject-font-awesome-css []
+  (doto (wd/create-element! "link")
+    (wd/set-properties! {:rel "stylesheet"
+                         :href "//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css"})
+    (wd/append-to! (wd/$ "head"))))
 
 (defn ^:export init []
   (track/initialize "55eGVmS7Ty7Sa4cLxwpKL235My8elBtQBOk4wx1R" "ghUQSvjYReHqwNhdOROgzI3xm0aybyarCXW30usM")
@@ -80,6 +85,7 @@
                 bus)
 
     (go-sub* pub :video-load _ (chan 1 (take 1))
+      (inject-font-awesome-css)
       ; wait video element to be available
       (<! (wait-for-presence yt/get-video))
       ; wait for video duration to be available

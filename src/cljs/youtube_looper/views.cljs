@@ -151,7 +151,7 @@
         (dom/set-properties! {"data-layer" 9})
         (dom/set-style! {:z-index 20
                          :position "absolute"
-                         :bottom "52px" :right "12px"})
+                         :bottom "132px" :right "12px"})
         (block-key-propagation)
         (dom/append-to! ($ "#movie_player")))))
 

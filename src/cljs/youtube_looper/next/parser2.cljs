@@ -33,7 +33,8 @@
 
 (defmethod mutate 'entity/set
   [{:keys [state ref]} _ props]
-  {:action (fn [] (swap! state update-in ref merge props))})
+  {:action (fn [] (if ref (swap! state update-in ref merge props)
+                          (swap! state merge props)))})
 
 (defmethod mutate 'loop/set-current-video-time
   [{:keys [state ref] {:keys [current-position]} :shared} _ {:keys [at]}]

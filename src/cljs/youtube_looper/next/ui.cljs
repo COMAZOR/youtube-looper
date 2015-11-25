@@ -128,16 +128,17 @@
           (let [{:keys [:db/id :loop/label :loop/start :loop/finish]} (-> this om/props)
                 {:keys [selected]} (om/get-computed this)]
             (dom/div #js {:style (css s/flex-row (s/justify-content "space-between")
-                                      {:width 300})}
-              (dom/div #js {:onClick #(if-let [label (js/prompt "New Label")]
+                                      #_ {:width 300})}
+              (dom/div #js {:style (css {:width 100})
+                            :onClick #(if-let [label (js/prompt "New Label")]
                                        (om/transact! this `[(entity/set {:loop/label ~label}) :app/current-track]))}
                 (if label
                   label
                   (dom/i nil "No Label")))
               (loop-time-updater this :loop/start)
               (loop-time-updater this :loop/finish)
-              (dom/a #js {:href "#" :onClick (pd #(call-computed this :on-select))} "Select")
-              (dom/a #js {:href "#" :onClick (pd #(call-computed this :on-delete))} "Delete")))))
+              (dom/a #js {:href "#" :onClick (pd #(call-computed this :on-select))} (icon "check"))
+              (dom/a #js {:href "#" :onClick (pd #(call-computed this :on-delete))} (icon "trash"))))))
 
 (def loop-row (om/factory LoopRow {:keyfn :db/id}))
 
@@ -157,9 +158,9 @@
           (let [{:keys [loop/start loop/finish] :as loop} (om/props this)]
             (dom/div nil
               (dom/button #js {:onClick #(om/transact! this '[(loop/set-current-video-time {:at :loop/start})])}
-                (or (u/seconds->time start) "Set Start"))
+                (or (some-> start u/seconds->time) "Set Start"))
               (dom/button #js {:onClick #(om/transact! this '[(loop/set-current-video-time {:at :loop/finish})])}
-                (or (u/seconds->time finish) "Set Finish"))
+                (or (some-> finish u/seconds->time) "Set Finish"))
               
               (dom/button #js {:onClick
                                #(when (valid-loop? loop)
