@@ -63,28 +63,6 @@
 (defn portal [props & children]
   (portal-factory (assoc props :children children)))
 
-(defn input [{:keys [value onChange] :as props}]
-  (dom/input
-    (clj->js (merge props
-                    {:value    (or value "")
-                     :onChange #(onChange (.. % -target -value))}))))
-
-(defn numeric-input [{:keys [value onChange] :as props}]
-  (js/React.createElement "input"
-                          (clj->js (merge props
-                                          {:value    (or value "")
-                                           :onChange #(let [value (.. % -target -value)]
-                                                       (cond
-                                                         (re-find #"^\d+(\.\d+)?$" value) (onChange (js/parseFloat value))
-                                                         (= "" value) (onChange "")))}))))
-
-(defn state-input [c {:keys [name style] :as options}]
-  (let [value (om/get-state c name)
-        comp (get options :comp input)]
-    (comp {:value    value
-           :style style
-           :onChange #(om/update-state! c merge {name %})})))
-
 ; Youtube Components
 
 (defn youtube-progress-bar [{:keys [color offset scale]}]
@@ -127,18 +105,19 @@
   (render [this]
           (let [{:keys [:db/id :loop/label :loop/start :loop/finish]} (-> this om/props)
                 {:keys [selected]} (om/get-computed this)]
-            (dom/div #js {:style (css s/flex-row (s/justify-content "space-between")
-                                      #_ {:width 300})}
-              (dom/div #js {:style (css {:width 100})
+            (dom/div #js {:style (css s/flex-row (s/justify-content "space-between"))}
+              (dom/div #js {:style (css {:paddingRight 10})
                             :onClick #(if-let [label (js/prompt "New Label")]
                                        (om/transact! this `[(entity/set {:loop/label ~label}) :app/current-track]))}
                 (if label
                   label
                   (dom/i nil "No Label")))
-              (loop-time-updater this :loop/start)
-              (loop-time-updater this :loop/finish)
-              (dom/a #js {:href "#" :onClick (pd #(call-computed this :on-select))} (icon "check"))
-              (dom/a #js {:href "#" :onClick (pd #(call-computed this :on-delete))} (icon "trash"))))))
+              (dom/div #js {:style (css s/flex-row (s/justify-content "space-between")
+                                        {:width 140})}
+                (loop-time-updater this :loop/start)
+                (loop-time-updater this :loop/finish)
+                (dom/a #js {:href "#" :onClick (pd #(call-computed this :on-select))} (icon "check"))
+                (dom/a #js {:href "#" :onClick (pd #(call-computed this :on-delete))} (icon "trash")))))))
 
 (def loop-row (om/factory LoopRow {:keyfn :db/id}))
 
@@ -154,19 +133,26 @@
   (query [this] [:db/id :loop/start :loop/finish])
   
   Object
+  (componentDidUpdate [this props state]
+                             (let [loop (om/props this)]
+                               (when (valid-loop? loop)
+                                 (js/setTimeout
+                                   (fn []
+                                     (om/transact! this '[(entity/set {:loop/start nil :loop/finish nil})])
+                                     (call-computed this :on-submit (assoc loop :db/id (random-uuid))))
+                                   10))))
+  
   (render [this]
           (let [{:keys [loop/start loop/finish] :as loop} (om/props this)]
-            (dom/div nil
-              (dom/button #js {:onClick #(om/transact! this '[(loop/set-current-video-time {:at :loop/start})])}
-                (or (some-> start u/seconds->time) "Set Start"))
-              (dom/button #js {:onClick #(om/transact! this '[(loop/set-current-video-time {:at :loop/finish})])}
-                (or (some-> finish u/seconds->time) "Set Finish"))
+            (dom/div #js {:style (css s/flex-row (s/justify-content "space-between"))}
+              (dom/div nil (if start (str "Start at " (u/seconds->time start))))
               
-              (dom/button #js {:onClick
-                               #(when (valid-loop? loop)
-                                 (om/transact! this '[(entity/set {:loop/start nil :loop/finish nil})])
-                                 (call-computed this :on-submit (assoc loop :db/id (random-uuid))))}
-                "Add Loop")))))
+              (if-not start
+                (dom/button #js {:onClick #(om/transact! this '[(loop/set-current-video-time {:at :loop/start})])}
+                  "Start new loop")
+                
+                (dom/button #js {:onClick #(om/transact! this '[(loop/set-current-video-time {:at :loop/finish})])}
+                  "Create loop"))))))
 
 (def new-loop-form (om/factory NewLoopForm))
 

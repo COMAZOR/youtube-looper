@@ -15,9 +15,7 @@
    :track/duration 100
    :track/loops    [{:db/id (random-uuid) :loop/label "full" :loop/start 5 :loop/finish 50}
                     {:db/id (random-uuid) :loop/label "intro" :loop/start 60 :loop/finish 70}]
-   :track/new-loop {:db/id (random-uuid)
-                    :loop/start 10
-                    :loop/finish 20}})
+   :track/new-loop {:db/id (random-uuid)}})
 
 #_ (def fake-store
   (p/map-kv-store {"123" track}))
@@ -53,8 +51,11 @@
                                      :store         (p/local-storage-kv-store "cards-")}
                                     (:remote query))))}))
 
-(defcard numeric-input
-  (ui/numeric-input {:value "" :onChange #(print "numeric input update" %)}))
+(defcard new-loop-black
+  (ui/new-loop-form {}))
+
+(defcard new-loop-with-start
+  (ui/new-loop-form {:loop/start 90}))
 
 (defcard loop-row-sample
   (ui/loop-row {:loop/start  123
