@@ -8,9 +8,8 @@
             [youtube-looper.next.parser2 :as p]
             [youtube-looper.next.ui :as ui]
             [youtube-looper.youtube :as yt]
-            [youtube-looper.views :as v]
             [youtube-looper.track :as track]
-            [wilkerdev.util.dom :as wd]))
+            [wilkerdev.util.dom :as wd :refer [$]]))
 
 (enable-console-print!)
 
@@ -42,6 +41,23 @@
    (go
      (while (not (f)) (<! (async/timeout delay)))
      (f))))
+
+(defn block-key-propagation [el]
+  (doto el
+    (wd/listen "keydown" #(.stopPropagation %))
+    (wd/listen "keyup" #(.stopPropagation %))
+    (wd/listen "keypress" #(.stopPropagation %))))
+
+(defn dialog-container []
+  (or ($ ".ytp-looper-container")
+      (doto (wd/create-element! "div")
+        (wd/add-class! "ytp-looper-container")
+        (wd/set-properties! {"data-layer" 9})
+        (wd/set-style! {:z-index 20
+                         :position "absolute"
+                         :bottom "132px" :right "12px"})
+        (block-key-propagation)
+        (wd/append-to! ($ "#movie_player")))))
 
 #_ (def store (p/map-kv-store {}))
 
@@ -97,7 +113,7 @@
                                                              (wd/video-duration (yt/get-video))))
       
       (setup-video-time-update bus)
-      (om/add-root! reconciler ui/LoopPage (v/dialog-container)))
+      (om/add-root! reconciler ui/LoopPage (dialog-container)))
 
     (go-sub pub :video-load [_ video-id]
       (println "set current video" video-id))

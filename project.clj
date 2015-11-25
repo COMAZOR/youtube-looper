@@ -13,16 +13,12 @@
                  [org.clojure/core.async "0.2.374"]
                  [org.omcljs/om "1.0.0-alpha23"]
                  [me.raynes/fs "1.4.6"]
-                 [enfocus "2.1.1"]
-                 [datascript "0.13.3"]
-                 [cljs-ajax "0.3.10"]
                  [com.cognitect/transit-cljs "0.8.232"]]
 
   :profiles {:dev {:dependencies [[figwheel "0.5.0-1"]
                                   [com.cemerick/piggieback "0.2.2-SNAPSHOT"]]
 
-                   :plugins [[lein-cljsbuild "1.1.1"]
-                             [lein-figwheel "0.5.0-1"]]}}
+                   :plugins [[lein-cljsbuild "1.1.1"]]}}
 
 
   :cljsbuild {:builds {:chrome-dev  {:source-paths ["src/cljs" "src/cljs-chrome"]
