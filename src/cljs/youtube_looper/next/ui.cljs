@@ -4,6 +4,7 @@
             [goog.object :as gobj]
             [goog.dom :as gdom]
             [goog.style :as style]
+            [youtube-looper.util :as u]
             [youtube-looper.next.styles :as s :refer [css]]))
 
 ; Helpers
@@ -19,6 +20,8 @@
     (apply f args)))
 
 ; Helper Components
+
+(defn icon [icon] (dom/i #js {:className (str "fa fa-" icon)}))
 
 (defn render-subtree-into-container [parent c node]
   (js/ReactDOM.unstable_renderSubtreeIntoContainer parent c node))
@@ -101,6 +104,18 @@
 
 ; Looper Components
 
+(defn loop-time-updater [c prop]
+  (let [value (get (om/props c) prop)
+        {:keys [selected]} (om/get-computed c)]
+    (dom/div #js {:style (css s/flex-row)}
+      (if selected
+        (dom/a #js {:href "#" :onClick (pd #(om/transact! c `[(entity/set {~prop ~(dec value)}) :app/current-track]))}
+          (icon "angle-down")))
+      (dom/div nil (u/seconds->time value))
+      (if selected
+        (dom/a #js {:href "#" :onClick (pd #(om/transact! c `[(entity/set {~prop ~(inc value)}) :app/current-track]))}
+          (icon "angle-up"))))))
+
 (defui LoopRow
   static om/Ident
   (ident [this {:keys [db/id]}] [:db/id id])
@@ -110,7 +125,8 @@
 
   Object
   (render [this]
-          (let [{:keys [:db/id :loop/label :loop/start :loop/finish]} (-> this om/props)]
+          (let [{:keys [:db/id :loop/label :loop/start :loop/finish]} (-> this om/props)
+                {:keys [selected]} (om/get-computed this)]
             (dom/div #js {:style (css s/flex-row (s/justify-content "space-between")
                                       {:width 300})}
               (dom/div #js {:onClick #(if-let [label (js/prompt "New Label")]
@@ -118,9 +134,8 @@
                 (if label
                   label
                   (dom/i nil "No Label")))
-              (dom/div nil start)
-              (dom/a #js {:href "#" :onClick (pd #(om/transact! this `[(entity/set {:loop/start ~(inc start)}) :app/current-track]))} "Inc start")
-              (dom/div nil finish)
+              (loop-time-updater this :loop/start)
+              (loop-time-updater this :loop/finish)
               (dom/a #js {:href "#" :onClick (pd #(call-computed this :on-select))} "Select")
               (dom/a #js {:href "#" :onClick (pd #(call-computed this :on-delete))} "Delete")))))
 
@@ -142,9 +157,9 @@
           (let [{:keys [loop/start loop/finish] :as loop} (om/props this)]
             (dom/div nil
               (dom/button #js {:onClick #(om/transact! this '[(loop/set-current-video-time {:at :loop/start})])}
-                (or start "Set Start"))
+                (or (u/seconds->time start) "Set Start"))
               (dom/button #js {:onClick #(om/transact! this '[(loop/set-current-video-time {:at :loop/finish})])}
-                (or finish "Set Finish"))
+                (or (u/seconds->time finish) "Set Finish"))
               
               (dom/button #js {:onClick
                                #(when (valid-loop? loop)
@@ -162,16 +177,6 @@
   (let [id (-> c om/props :db/id)]
     (om/transact! c `[(track/remove-loop ~loop) :app/current-track])))
 
-(defn update-label [c loop label]
-  (let [id (-> c om/props :db/id)
-        new-loop (assoc loop :loop/label label)]
-    (om/transact! c `[(track/update-loop {:loop ~new-loop :db/id ~id})])))
-
-(defn inc-start [c loop]
-  (let [id (-> c om/props :db/id)
-        new-loop (update loop :loop/start inc)]
-    (om/transact! c `[(track/update-loop {:loop ~new-loop :db/id ~id}) :app/current-track])))
-
 (defn select-loop [c loop]
   (let [id (-> c om/props :db/id)]
     (om/transact! c `[(track/select-loop ~loop) :app/current-track])))
@@ -182,7 +187,7 @@
                  :track/duration
                  {:track/new-loop (om/get-query NewLoopForm)}
                  {:track/loops (om/get-query LoopRow)}
-                 {:track/selected-loop [:loop/start :loop/finish]}])
+                 {:track/selected-loop [:db/id :loop/start :loop/finish]}])
 
   static om/Ident
   (ident [this {:keys [db/id]}] [:db/id id])
@@ -191,8 +196,9 @@
   (render [this]
           (let [{:keys [track/loops track/new-loop] :as track} (om/props this)]
             (dom/div #js {:style (css s/popup-container)}
-              (apply dom/div nil (->> (map #(om/computed % {:on-delete    (partial delete-loop this %)
-                                                            :on-select    (partial select-loop this %)}) loops)
+              (apply dom/div nil (->> (map #(om/computed % {:on-delete (partial delete-loop this %)
+                                                            :on-select (partial select-loop this %)
+                                                            :selected  (= (get-in track [:track/selected-loop :db/id]) (:db/id %))}) loops)
                                       (map loop-row)))
               (new-loop-form (om/computed new-loop {:on-submit #(create-loop this %)}))))))
 
@@ -216,7 +222,7 @@
                 (dom/button #js {:className "ytp-button"
                                  :title     "Show Loops"
                                  :style     (css s/youtube-action-button)
-                                 :onClick   #(om/transact! this '[(app/toggle-visibility)])} "AB"))
+                                 :onClick   #(om/transact! this `[(entity/set {:app/visible? ~(not visible?)}) :app/current-track])} "AB"))
               (if visible? (loop-manager current-track))))))
 
 (def loop-page (om/factory LoopPage))

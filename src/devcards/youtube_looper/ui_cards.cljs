@@ -56,9 +56,6 @@
 (defcard numeric-input
   (ui/numeric-input {:value "" :onChange #(print "numeric input update" %)}))
 
-(defcard track-loop-overlay-sample
-  (ui/track-loop-overlay {:track/duration 100 :track/loop {:loop/start 10 :loop/finish 20}}))
-
 (defcard loop-row-sample
   (ui/loop-row {:loop/start  123
                 :loop/finish 128
