@@ -11,6 +11,7 @@
 (defn pd [f]
   (fn [e]
     (.preventDefault e)
+    (.stopPropagation e)
     (f)))
 
 (defn call-computed [c name & args]
@@ -102,25 +103,23 @@
 
 (defui LoopRow
   static om/Ident
-  (ident [this {:keys [db/id]}]
-         [:entities/by-id id])
+  (ident [this {:keys [db/id]}] [:db/id id])
 
   static om/IQuery
-  (query [this]
-         [:loop/label :loop/start :loop/finish])
+  (query [this] [:db/id :loop/label :loop/start :loop/finish])
 
   Object
   (render [this]
-          (let [{:keys [:loop/label :loop/start :loop/finish]} (-> this om/props)]
+          (let [{:keys [:db/id :loop/label :loop/start :loop/finish]} (-> this om/props)]
             (dom/div #js {:style (css s/flex-row (s/justify-content "space-between")
                                       {:width 300})}
               (dom/div #js {:onClick #(if-let [label (js/prompt "New Label")]
-                                       (call-computed this :update-label label))}
+                                       (om/transact! this `[(entity/set {:loop/label ~label}) :app/current-track]))}
                 (if label
                   label
                   (dom/i nil "No Label")))
               (dom/div nil start)
-              (dom/a #js {:href "#" :onClick (pd #(call-computed this :inc-start))} "Inc start")
+              (dom/a #js {:href "#" :onClick (pd #(om/transact! this `[(entity/set {:loop/start ~(inc start)}) :app/current-track]))} "Inc start")
               (dom/div nil finish)
               (dom/a #js {:href "#" :onClick (pd #(call-computed this :on-select))} "Select")
               (dom/a #js {:href "#" :onClick (pd #(call-computed this :on-delete))} "Delete")))))
@@ -132,28 +131,36 @@
        (< start finish)))
 
 (defui NewLoopForm
+  static om/Ident
+  (ident [this {:keys [db/id]}] [:db/id id])
+  
+  static om/IQuery
+  (query [this] [:db/id :loop/start :loop/finish])
+  
   Object
   (render [this]
-          (let [{:keys [on-submit]} (om/props this)]
+          (let [{:keys [loop/start loop/finish] :as loop} (om/props this)]
             (dom/div nil
-              (state-input this {:name :loop/start :comp numeric-input :style (css s/time-input)})
-              (state-input this {:name :loop/finish :comp numeric-input :style (css s/time-input)})
+              (dom/button #js {:onClick #(om/transact! this '[(loop/set-current-video-time {:at :loop/start})])}
+                (or start "Set Start"))
+              (dom/button #js {:onClick #(om/transact! this '[(loop/set-current-video-time {:at :loop/finish})])}
+                (or finish "Set Finish"))
+              
               (dom/button #js {:onClick
-                               #(when (valid-loop? (om/get-state this))
-                                 (on-submit (assoc (om/get-state this) :db/id (random-uuid)))
-                                 (om/set-state! this {:loop/start "" :loop/finish ""}))}
-                          "Add Loop")))))
+                               #(when (valid-loop? loop)
+                                 (om/transact! this '[(entity/set {:loop/start nil :loop/finish nil})])
+                                 (call-computed this :on-submit (assoc loop :db/id (random-uuid))))}
+                "Add Loop")))))
 
 (def new-loop-form (om/factory NewLoopForm))
 
 (defn create-loop [c loop]
-  (let [props (-> c om/props)
-        data (assoc props :loop loop)]
-    (om/transact! c `[(track/new-loop ~data)])))
+  (let [props (-> c om/props)]
+    (om/transact! c `[(track/new-loop ~loop) :app/current-track])))
 
 (defn delete-loop [c loop]
   (let [id (-> c om/props :db/id)]
-    (om/transact! c `[(track/remove-loop {:loop ~loop :db/id ~id}) :app/current-track])))
+    (om/transact! c `[(track/remove-loop ~loop) :app/current-track])))
 
 (defn update-label [c loop label]
   (let [id (-> c om/props :db/id)
@@ -167,41 +174,39 @@
 
 (defn select-loop [c loop]
   (let [id (-> c om/props :db/id)]
-    (om/transact! c `[(track/select-loop {:loop ~loop :db/id ~id}) :app/current-track])))
+    (om/transact! c `[(track/select-loop ~loop) :app/current-track])))
 
 (defui LoopManager
   static om/IQuery
-  (query [this] [{:track/loops (om/get-query LoopRow)} :track/duration {:track/selected-loop [:loop/start :loop/finish]}])
+  (query [this] [:db/id
+                 :track/duration
+                 {:track/new-loop (om/get-query NewLoopForm)}
+                 {:track/loops (om/get-query LoopRow)}
+                 {:track/selected-loop [:loop/start :loop/finish]}])
 
   static om/Ident
-  (ident [this {:keys [db/id]}] [:entities/by-id id])
+  (ident [this {:keys [db/id]}] [:db/id id])
 
   Object
   (render [this]
-          (let [{:keys [track/loops] :as track} (om/props this)]
+          (let [{:keys [track/loops track/new-loop] :as track} (om/props this)]
             (dom/div #js {:style (css s/popup-container)}
               (apply dom/div nil (->> (map #(om/computed % {:on-delete    (partial delete-loop this %)
-                                                            :on-select    (partial select-loop this %)
-                                                            :update-label (partial update-label this %)
-                                                            :inc-start    (partial inc-start this %)}) loops)
+                                                            :on-select    (partial select-loop this %)}) loops)
                                       (map loop-row)))
-              (new-loop-form {:on-submit #(create-loop this %)})))))
+              (new-loop-form (om/computed new-loop {:on-submit #(create-loop this %)}))))))
 
 (def loop-manager (om/factory LoopManager {:keyfn :db/id}))
 
-(defui LoopDisplay
-  Object
-  (render [this]
-          (portal {:append-to ".ytp-progress-list"}
-            (track-loop-overlay {:track/duration 100 :track/loop {:loop/start 10 :loop/finish 20}}))))
-
 (defui LoopPage
   static om/IQuery
-  (query [this] [:app/visible? {:app/current-track (om/get-query LoopManager)}])
+  (query [this] [:app/visible?
+                 {:app/current-track (om/get-query LoopManager)}])
 
   Object
   (render [this]
-          (let [{:keys [app/current-track app/visible?] :as props} (om/props this)]
+          (let [{:keys [app/current-track app/visible? app/new-loop] :as props} (om/props this)]
+            (println "loop page" props)
             (dom/div nil
               (portal {:append-to ".ytp-progress-list"}
                 (track-loop-overlay current-track))

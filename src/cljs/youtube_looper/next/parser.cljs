@@ -18,6 +18,9 @@
       {:value v}
       {:value :not-found})))
 
+(defmethod read :app/current-loop [{:keys [state ]} _ _]
+  {:value (or (get @state :app/current-loop) {:db/id "new-loop"})})
+
 (defmethod read :app/current-track [{:keys [state ast]} k _]
   (let [st @state
         video (get st :youtube/current-video)]
@@ -39,6 +42,11 @@
 
 (defn remove-ref [entity]
   #(filterv (fn [e] (not= (second e) (:db/id entity))) %))
+
+(defmethod mutate 'app/current-loop-update [{:keys [state shared]} _ {:keys [key]}]
+  (let [{:keys [current-position]} shared]
+    (js/console.log "shared" (current-position))
+    {:action (fn [] (swap! state #(-> (assoc-in % [:app/current-loop key] (current-position)))))}))
 
 (defmethod mutate 'track/new-loop [{:keys [state ast]} _ {:keys [db/id loop]}]
   {:action (fn [] (swap! state #(-> (update-in % [:entities/by-id id :track/loops] conj (mk-ref loop))

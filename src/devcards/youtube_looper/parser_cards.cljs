@@ -30,6 +30,18 @@
 
 (def sample-loop (mk-loop 10 20))
 
+(deftest test-app-current-loop
+  (is (= {:app/current-loop {:db/id "new-loop"}} (p/parser {:state (atom {})} [:app/current-loop])))
+  (is (= {:app/current-loop {:loop true}} (p/parser {:state (atom {:app/current-loop {:loop true}})} [:app/current-loop]))))
+
+(deftest test-app-update-current-loop
+  (let [state (atom {:app/current-loop {:loop/start 10}})]
+    (p/parser {:state  state
+               :shared {:current-position #(-> 20)}} '[(app/current-loop-update {:key :loop/finish})])
+    (is (= {:app/current-loop {:loop/start 10
+                               :loop/finish 20}}
+           @state))))
+
 (deftest test-new-loop
   (let [state (atom {:entities/by-id {"123" {:db/id "123" :youtube/id "yid" :track/loops []}}})]
     (p/parser {:state state}

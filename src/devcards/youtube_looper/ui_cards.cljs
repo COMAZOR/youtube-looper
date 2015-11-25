@@ -3,34 +3,47 @@
             [om.next :as om :refer-macros [defui]]
             [om.dom :as dom]
             [wilkerdev.util.dom :as wd]
-            [youtube-looper.next.parser :as p]
+            [youtube-looper.next.parser2 :as p]
             [youtube-looper.next.ui :as ui])
   (:require-macros [devcards.core :as dc :refer [defcard deftest dom-node]]))
+
+(def video-position (atom 0))
 
 (def track
   {:youtube/id     "123"
    :db/id          (random-uuid)
    :track/duration 100
    :track/loops    [{:db/id (random-uuid) :loop/label "full" :loop/start 5 :loop/finish 50}
-                    {:db/id (random-uuid) :loop/label "intro" :loop/start 60 :loop/finish 70}]})
+                    {:db/id (random-uuid) :loop/label "intro" :loop/start 60 :loop/finish 70}]
+   :track/new-loop {:db/id (random-uuid)
+                    :loop/start 10
+                    :loop/finish 20}})
 
-(def fake-store
+#_ (def fake-store
   (p/map-kv-store {"123" track}))
 
-(def reconciler
+#_ (def reconciler
   (om/reconciler
     {:state  {:youtube/current-video "123"
               :app/visible?          true
-              :app/current-track     (p/kv-get fake-store "123")}
+              :app/current-track     track}
+     :shared {:current-position #(deref video-position)}
      :parser p/parser
      :send   (fn [{:keys [remote]} cb]
                (println "REMOTE" remote)
-               (js/setTimeout
-                 #(cb (p/remote-parser {:store fake-store}
-                                       remote))
-                 200))}))
+               (cb (p/remote-parser {:store fake-store}
+                                     remote)))}))
 
-(def reconciler-local-storage
+(def initial-state
+  {:youtube/current-video "123"
+   :app/visible?          true
+   :app/current-track     track})
+
+(def reconciler
+  (p/reconciler {:state  initial-state
+                 :shared {:current-position #(deref video-position)}}))
+
+#_ (def reconciler-local-storage
   (om/reconciler
     {:state  {:youtube/current-video "123"}
      :parser p/parser
@@ -65,6 +78,18 @@
                   </div>
                 ")
                 (wd/append-to! node)))))
+
+(defcard video-position-control
+  "Use to control the current video position when picking time"
+  (fn [data]
+    (let [pos @video-position]
+      (dom/div nil
+        (dom/input #js {:type     "range"
+                        :min      0
+                        :max      100
+                        :value    pos
+                        :onChange #(reset! video-position (js/parseInt (.. % -target -value)))}))))
+  video-position)
 
 (defcard loop-page-card
   "Display the loop manager dialog"

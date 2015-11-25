@@ -5,12 +5,11 @@
             [om.next :as om :refer-macros [defui]]
             [wilkerdev.util.dom :as wd]
             [wilkerdev.util.reactive :as r]
-            [youtube-looper.next.parser :as p]
+            [youtube-looper.next.parser2 :as p]
             [youtube-looper.next.ui :as ui]
             [youtube-looper.youtube :as yt]
             [youtube-looper.views :as v]
             [youtube-looper.track :as track]
-            [om.dom :as dom]
             [wilkerdev.util.dom :as wd]))
 
 (enable-console-print!)
@@ -44,28 +43,34 @@
      (while (not (f)) (<! (async/timeout delay)))
      (f))))
 
-(def store (p/map-kv-store {}))
+#_ (def store (p/map-kv-store {}))
 
 (defn read-selected-loop [state]
-  (let [{:keys [app/current-track]} (p/parser {:state state} [:app/current-track])]
+  (let [{:keys [app/current-track]} (p/parser {:state state} [{:app/current-track [{:track/selected-loop [:loop/start :loop/finish]}]}])]
+    (println "current track" current-track)
     (get current-track :track/selected-loop)))
+
+(defn youtube-video-position []
+  (let [pos (some-> (yt/get-video) (wd/video-current-time))]
+    (if (js/isNaN pos) nil pos)))
 
 (defn ^:export init []
   (track/initialize "55eGVmS7Ty7Sa4cLxwpKL235My8elBtQBOk4wx1R" "ghUQSvjYReHqwNhdOROgzI3xm0aybyarCXW30usM")
   (let [bus (chan 1024 (map (partial debug-input "flux message")))
         pub (async/pub bus first)
         youtube-id (yt/current-video-id)
-        reconciler (om/reconciler
+        reconciler (p/reconciler
                      {:state  {:youtube/current-video youtube-id
-                               :app/current-track     (or (p/kv-get store youtube-id)
+                               :app/current-track     (or #_ (p/kv-get store youtube-id)
                                                           (p/blank-track youtube-id))
                                :app/visible?          true}
+                      :shared {:current-position youtube-video-position}
                       :parser p/parser
-                      :send   (fn [{:keys [remote]} cb]
-                                (cb (p/remote-parser {:store store}
-                                                     remote)))})]
+                      ;:send   
+                      #_ (fn [{:keys [remote]} cb]
+                        (cb (p/remote-parser {:store store}
+                                             remote)))})]
 
-    (println "hi?" (wd/video-duration (yt/get-video)))
     (set! (.-recon js/window) reconciler)
     
     ; watch for video page changes
@@ -75,8 +80,11 @@
                 bus)
 
     (go-sub* pub :video-load _ (chan 1 (take 1))
+      ; wait video element to be available
       (<! (wait-for-presence yt/get-video))
+      ; wait for video duration to be available
       (<! (wait-for-presence #(not (js/isNaN (wd/video-duration (yt/get-video))))))
+      
       (track/track-extension-loaded)
 
       (swap! (get-in reconciler [:config :state]) #(assoc-in % [:app/current-track :track/duration]
@@ -86,57 +94,14 @@
       (om/add-root! reconciler ui/LoopPage (v/dialog-container)))
 
     (go-sub pub :video-load [_ video-id]
-      (println "set current video" video-id)
-      #_(d/set-current-video! conn video-id))
+      (println "set current video" video-id))
 
     (go-sub pub :time-update _
       (when-let [loop (read-selected-loop (get-in reconciler [:config :state]))]
-        (println "loop" loop)
         (loop-back (yt/get-video) loop)))
-
-    (go-sub pub :show-dialog _
-      #_(d/set-dialog-visibility! conn true))
-
-    (go-sub pub :hide-dialog _
-      #_(d/set-dialog-visibility! conn false))
-
-    (go-sub pub :invoke-looper _
-      (println "invoke looper")
-      #_(if-not (v/dialog-el)
-          (put! bus [:show-dialog])))
-
-    (go-sub pub :select-loop [_ loop]
-      #_(d/select-loop! conn loop)
-      (if loop (track/track-loop-selected) (track/track-loop-disabled))
-      (if loop (wd/video-seek! (yt/get-video) (:loop/start loop))))
-
-    #_ (go-sub pub :create-loop _
-      (track/track-loop-created)
-      (d/create-from-new-loop! conn)
-      (sync-loops! @conn))
-
-    #_ (go-sub pub :rename-loop [_ loop]
-      (when-let [new-label (js/prompt (t "new_loop_name") (:loop/label loop))]
-        (track/track-loop-renamed)
-        (d/rename-loop! conn loop new-label))
-      (sync-loops! @conn))
-
-    #_ (go-sub pub :remove-loop [_ loop]
-      (track/track-loop-removed)
-      (d/remove-loop! conn loop)
-      (sync-loops! @conn))
-
-    #_ (go-sub pub :update-new-start [_ val]
-      (d/update-new-loop! conn {:loop/start val}))
-
-    #_ (go-sub pub :update-new-finish [_ val]
-      (d/update-new-loop! conn {:loop/finish val}))
 
     (go-sub pub :set-playback-rate [_ rate]
       (track/track-playback-rate-changed rate)
       (wd/video-playback-rate! (yt/get-video) rate))
 
-    (go-sub pub :export-data _
-      #_(.log js/console (d/export-data)))
-
-    #_looper))
+    reconciler))
