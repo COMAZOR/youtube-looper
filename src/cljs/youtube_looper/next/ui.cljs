@@ -44,19 +44,19 @@
 (defui Portal
   Object
   (componentDidMount [this]
-                     (let [props (om/props this)
-                           node (create-portal-node props)]
-                       (gobj/set this "node" node)
-                       (render-subtree-into-container this (portal-render-children (:children props)) node)))
+    (let [props (om/props this)
+          node (create-portal-node props)]
+      (gobj/set this "node" node)
+      (render-subtree-into-container this (portal-render-children (:children props)) node)))
 
   (componentWillUnmount [this]
-                        (when-let [node (gobj/get this "node")]
-                          (js/ReactDOM.unmountComponentAtNode node)
-                          (gdom/removeNode node)))
+    (when-let [node (gobj/get this "node")]
+      (js/ReactDOM.unmountComponentAtNode node)
+      (gdom/removeNode node)))
 
   (componentWillReceiveProps [this props]
-                             (let [node (gobj/get this "node")]
-                               (render-subtree-into-container this (portal-render-children (:children props)) node)))
+    (let [node (gobj/get this "node")]
+      (render-subtree-into-container this (portal-render-children (:children props)) node)))
 
   (render [this] (js/React.DOM.noscript)))
 
@@ -103,29 +103,28 @@
 
   Object
   (render [this]
-          (let [{:keys [loop/label]} (-> this om/props)
-                {:keys [selected]} (om/get-computed this)]
-            (dom/div #js {:style (css s/loop-row (if selected s/selected-loop-row))}
-              (if selected
-                (dom/a #js {:href "#" :onClick (pd #(call-computed this :on-clean-selection))} 
-                  (icon "pause-circle" s/fs-23))
-                (dom/a #js {:href "#" :onClick (pd #(call-computed this :on-select))}
-                  (icon "play-circle" s/fs-23)))
-              (dom/div #js {:style (css {:padding "0 10px"
-                                         :width 168})
-                            :onClick #(if-let [label (js/prompt "New Label")]
-                                       (om/transact! this `[(entity/set {:loop/label ~label}) :app/current-track]))}
-                (if label
-                  label
-                  (dom/i nil "No Label")))
-              (dom/div #js {:style (css s/flex-row-center (s/justify-content "space-between"))}
-                (loop-time-updater this :loop/start)
-                (dom/div nil "/")
-                (loop-time-updater this :loop/finish)
-                
-                (dom/a #js {:href "#" :onClick (pd #(call-computed this :on-delete))
-                            :style (css {:paddingLeft 10})}
-                  (icon "trash" s/fs-18)))))))
+    (let [{:keys [loop/label]} (-> this om/props)
+          {:keys [selected]} (om/get-computed this)]
+      (dom/div #js {:style (css s/loop-row (if selected s/selected-loop-row))}
+        (if selected
+          (dom/a #js {:href "#" :onClick (pd #(call-computed this :on-clean-selection))}
+            (icon "pause-circle" s/fs-23))
+          (dom/a #js {:href "#" :onClick (pd #(call-computed this :on-select))}
+            (icon "play-circle" s/fs-23)))
+        (dom/div #js {:style   (css s/loop-label {:cursor "pointer"})
+                      :onClick #(if-let [label (js/prompt "New Label" (or label ""))]
+                                 (om/transact! this `[(entity/set {:loop/label ~label}) :app/current-track]))}
+          (if label
+            label
+            (dom/i nil "No Label")))
+        (dom/div #js {:style (css s/flex-row-center (s/justify-content "space-between"))}
+          (loop-time-updater this :loop/start)
+          (dom/div nil "/")
+          (loop-time-updater this :loop/finish)
+
+          (dom/a #js {:href  "#" :onClick (pd #(call-computed this :on-delete))
+                      :style (css {:paddingLeft 10})}
+            (icon "trash" s/fs-18)))))))
 
 (def loop-row (om/factory LoopRow {:keyfn :db/id}))
 
@@ -133,60 +132,59 @@
   (and (number? start) (number? finish)
        (< start finish)))
 
-(defui NewLoopForm
+(defui NewLoopRow
   static om/Ident
   (ident [this {:keys [db/id]}] [:db/id id])
-  
+
   static om/IQuery
   (query [this] '[:db/id :loop/start :loop/finish :video/current-time])
-  
+
   Object
   (componentDidUpdate [this props state]
-                             (let [loop (dissoc (om/props this) :video/current-time)]
-                               (when (valid-loop? loop)
-                                 (js/setTimeout
-                                   (fn []
-                                     (om/transact! this '[(entity/set {:loop/start nil :loop/finish nil})])
-                                     (call-computed this :on-submit (assoc loop :db/id (random-uuid))))
-                                   10))))
-  
+    (let [loop (dissoc (om/props this) :video/current-time)]
+      (when (valid-loop? loop)
+        (om/transact! this '[(entity/set {:loop/start nil :loop/finish nil})])
+        (call-computed this :on-submit (assoc loop :db/id (random-uuid))))))
+
   (render [this]
-          (let [{:keys [loop/start loop/finish video/current-time] :as loop} (om/props this)]
-            (dom/div #js {:style (css s/flex-row (s/justify-content "space-between"))}
-              (dom/div nil "Time - " current-time)
-              (dom/div nil (if start (str "Start at " (u/seconds->time start))))
+    (let [{:keys [loop/start video/current-time]} (-> this om/props)
+          offtime? (< current-time start)]
+      (dom/div #js {:style (css s/loop-row)}
+        (dom/div #js {:style (css s/flex-row-center)}
+          (if start
+            (if offtime?
+              (dom/a #js {:href "#" :onClick (pd #(om/transact! this '[(loop/set-current-video-time {:at :loop/start})]))}
+                (icon "plus-circle" s/fs-23))
               
-              (if-not start
-                (dom/button #js {:onClick #(om/transact! this '[(loop/set-current-video-time {:at :loop/start})])}
-                  "Start new loop")
+              (dom/a #js {:href "#" :onClick (pd #(om/transact! this '[(loop/set-current-video-time {:at :loop/finish})]))}
+                (icon "pause-circle" s/fs-23)))
 
-                (if (< current-time start)
-                  (dom/button #js {:onClick #(om/transact! this '[(loop/set-current-video-time {:at :loop/start})])}
-                    "Reset initial time")
-                  
-                  (dom/button #js {:onClick #(om/transact! this '[(loop/set-current-video-time {:at :loop/finish})])}
-                    "Create loop")))))))
+            (dom/a #js {:href "#" :onClick (pd #(om/transact! this '[(loop/set-current-video-time {:at :loop/start})]))}
+              (icon "plus-circle" s/fs-23)))
 
-(def new-loop-form (om/factory NewLoopForm))
-
-(defui TemporaryLoop
-  static om/Ident
-  (ident [this {:keys [db/id]}] [:db/id id])
-  
-  static om/IQuery
-  (query [this] '[:db/id :loop/start :video/current-time])
-  
-  Object
-  (render [this]
-          (let [{:keys [loop/start video/current-time] :as loop} (om/props this)]
+          (dom/div #js {:style (css s/loop-label)}
             (dom/div nil
-              start " - " current-time))))
+              (if start
+                (if offtime?
+                  "Click to reset initial time"
+                  (dom/span #js {:style (css {:color s/c-f12b24-red})} "Click to set end time"))
+                "Start new loop"))))
+        (if start
+          (dom/div #js {:style (css s/flex-row-center (s/justify-content "space-between"))}
+            (dom/div #js {:style (css {:padding "0 5px"})} (u/seconds->time start))
+            (dom/div nil "/")
+            (dom/div #js {:style (css {:color   s/c-f12b24-red
+                                       :padding "0 5px"})} (u/seconds->time current-time))
 
-(def temporary-loop (om/factory TemporaryLoop))
+            (dom/a #js {:href  "#" :onClick (pd #(om/transact! this '[(entity/set {:loop/start nil})]))
+                        :style (css {:paddingLeft 10})}
+              (icon "trash" s/fs-18))))))))
+
+(def new-loop-row (om/factory NewLoopRow))
 
 (defn create-loop [c loop]
   (let [props (-> c om/props)]
-    (om/transact! c `[(track/new-loop ~loop) :app/current-track])))
+    (om/transact! c `[(track/new-loop ~loop) (track/select-loop ~loop) :app/current-track])))
 
 (defn delete-loop [c loop]
   (let [id (-> c om/props :db/id)]
@@ -196,60 +194,52 @@
   (let [id (-> c om/props :db/id)]
     (om/transact! c `[(track/select-loop ~loop) :app/current-track])))
 
-(defn dbg [value] (println "debug" value) value)
-
 (defui LoopManager
   static om/IQuery
-  (query [this] [:db/id
-                 :track/duration
-                 {:track/new-loop (om/get-query NewLoopForm)}
-                 {:track/new-loop2 (om/get-query TemporaryLoop)}
-                 {:track/loops (om/get-query LoopRow)}
-                 {:track/selected-loop [:db/id :loop/start :loop/finish]}])
+  (query [this]
+    [:db/id
+     :track/duration
+     {:track/new-loop (om/get-query NewLoopRow)}
+     {:track/loops (om/get-query LoopRow)}
+     {:track/selected-loop [:db/id :loop/start :loop/finish]}])
 
   static om/Ident
   (ident [this {:keys [db/id]}] [:db/id id])
 
   Object
   (render [this]
-          (let [{:keys [track/loops track/new-loop track/new-loop2] :as track} (om/props this)]
-            (dom/div #js {:style (css s/popup-container s/body-text)}
-              (dom/div #js {:style (css {:padding 6})}
-                (dom/div #js {:style (css s/header-text)} "My Loops (" (count loops) ")")
-
-                (new-loop-form (om/computed new-loop {:on-submit #(create-loop this %)})))
-
-              (dom/hr #js {:style (css s/hr)})
-              
-              (temporary-loop new-loop2)
-              (apply dom/div #js {:style (css {:padding 6})}
-                (->> (map #(om/computed % {:on-delete          (partial delete-loop this %)
-                                           :on-select          (partial select-loop this %)
-                                           :on-clean-selection (partial select-loop this nil)
-                                           :selected           (= (get-in track [:track/selected-loop :db/id]) (:db/id %))})
-                          loops)
-                     (map loop-row)))))))
+    (let [{:keys [track/loops track/new-loop] :as track} (om/props this)]
+      (dom/div #js {:style (css s/popup-container s/body-text)}
+        (apply dom/div #js {:style (css {:padding 6})}
+          (new-loop-row (om/computed new-loop {:on-submit #(create-loop this %)}))
+          (->> (map #(om/computed % {:on-delete          (partial delete-loop this %)
+                                     :on-select          (partial select-loop this %)
+                                     :on-clean-selection (partial select-loop this nil)
+                                     :selected           (= (get-in track [:track/selected-loop :db/id]) (:db/id %))})
+                    (sort-by :loop/start loops))
+               (map loop-row)))))))
 
 (def loop-manager (om/factory LoopManager {:keyfn :db/id}))
 
 (defui LoopPage
   static om/IQuery
-  (query [this] [:app/visible?
-                 {:app/current-track (om/get-query LoopManager)}])
+  (query [this]
+    [:app/visible?
+     {:app/current-track (om/get-query LoopManager)}])
 
   Object
   (render [this]
-          (let [{:keys [app/current-track app/visible? app/new-loop] :as props} (om/props this)]
-            (dom/div nil
-              (portal {:append-to ".ytp-progress-list"}
-                (track-loop-overlay current-track))
-              (portal {:insert-after ".ytp-settings-button"
-                       :style        {:display       "inline-block"
-                                      :verticalAlign "top"}}
-                (dom/button #js {:className "ytp-button"
-                                 :title     "Show Loops"
-                                 :style     (css s/youtube-action-button)
-                                 :onClick   #(om/transact! this `[(entity/set {:app/visible? ~(not visible?)}) :app/current-track])} "AB"))
-              (if visible? (loop-manager current-track))))))
+    (let [{:keys [app/current-track app/visible? app/new-loop] :as props} (om/props this)]
+      (dom/div nil
+        (portal {:append-to ".ytp-progress-list"}
+          (track-loop-overlay current-track))
+        (portal {:insert-after ".ytp-settings-button"
+                 :style        {:display       "inline-block"
+                                :verticalAlign "top"}}
+          (dom/button #js {:className "ytp-button"
+                           :title     "Show Loops"
+                           :style     (css s/youtube-action-button)
+                           :onClick   #(om/transact! this `[(entity/set {:app/visible? ~(not visible?)}) :app/current-track])} "AB"))
+        (if visible? (loop-manager current-track))))))
 
 (def loop-page (om/factory LoopPage))

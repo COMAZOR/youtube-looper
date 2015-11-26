@@ -1,5 +1,6 @@
 (ns youtube-looper.ui-cards
   (:require [cljs.test :refer-macros [is async]]
+            [cljs.core.async :as async]
             [om.next :as om :refer-macros [defui]]
             [om.dom :as dom]
             [wilkerdev.util.dom :as wd]
@@ -39,7 +40,8 @@
 
 (def reconciler
   (p/reconciler {:state  initial-state
-                 :shared {:current-position #(deref video-position)}}))
+                 :shared {:current-position #(deref video-position)
+                          :bus (async/chan 1024)}}))
 
 #_ (def reconciler-local-storage
   (om/reconciler
@@ -52,10 +54,10 @@
                                     (:remote query))))}))
 
 (defcard new-loop-black
-  (ui/new-loop-form {}))
+  (ui/new-loop-row {}))
 
 (defcard new-loop-with-start
-  (ui/new-loop-form {:loop/start 90}))
+  (ui/new-loop-row {:loop/start 90}))
 
 (defcard loop-row-sample
   (ui/loop-row {:loop/start  123

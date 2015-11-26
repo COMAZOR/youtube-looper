@@ -87,7 +87,8 @@
                                                             (assoc :track/loops [{:db/id (random-uuid) :loop/label "full" :loop/start 5 :loop/finish 50}
                                                                                  {:db/id (random-uuid) :loop/label "intro" :loop/start 60 :loop/finish 70}])))
                                :app/visible?          true}
-                      :shared {:current-position youtube-video-position}
+                      :shared {:current-position youtube-video-position
+                               :bus bus}
                       :parser p/parser
                       ;:send   
                       #_(fn [{:keys [remote]} cb]
@@ -119,6 +120,9 @@
 
     (go-sub pub :video-load [_ video-id]
       (println "set current video" video-id))
+    
+    (go-sub pub :seek-to [_ time]
+      (wd/video-seek! (yt/get-video) time))
 
     (go-sub pub :time-update _
       (let [video (yt/get-video)]

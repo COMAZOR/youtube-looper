@@ -15,6 +15,7 @@
 (def c-abaaaa-grey "#abaaaa")
 (def c-d3d3d3-grey "#d3d3d3")
 (def c-989898-grey "#989898")
+(def c-f12b24-red "#f12b24")
 (def fs-13 {:fontSize 13})
 (def fs-15 {:fontSize 15})
 (def fs-18 {:fontSize 18})
@@ -64,3 +65,7 @@
          (justify-content "space-between")
          {:borderRadius "3px"
           :padding "3px 9px"}))
+
+(def loop-label 
+  {:padding "0 10px"
+   :width 168})

@@ -1,5 +1,6 @@
 (ns youtube-looper.next.parser2
-  (:require [om-tutorial.parsing :as p]
+  (:require [cljs.core.async :as async]
+            [om-tutorial.parsing :as p]
             [om.next :as om]
             [wilkerdev.local-storage :as ls]))
 
@@ -24,9 +25,6 @@
 (defn read-local
   [{:keys [ast query state] :as env} key _]
   (let [st @state]
-    (println "read key" key)
-    (when (= key :video/current-time)
-      (println "get current time" key query ast))
     (case key
       :db/id (if (om/ident? (:key ast))
                {:value (p/parse-join-with-reader read-local (assoc env :db-path []) (:key ast))}
@@ -56,8 +54,10 @@
   {:action (fn [] (swap! state assoc-in (conj ref at) (current-position)))})
 
 (defmethod mutate 'track/select-loop
-  [{:keys [state ref]} _ {:keys [db/id]}]
-  {:action (fn [] (swap! state assoc-in (conj ref :track/selected-loop) (if id [:db/id id])))})
+  [{:keys [state ref] {:keys [bus]} :shared} _ {:keys [loop/start db/id]}]
+  {:action (fn []
+             (async/put! bus [:seek-to start])
+             (swap! state assoc-in (conj ref :track/selected-loop) (if id [:db/id id])))})
 
 (defmethod mutate 'track/new-loop
   [{:keys [state ref]} _ {:keys [db/id] :as loop}]
