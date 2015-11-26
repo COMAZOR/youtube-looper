@@ -72,7 +72,7 @@
 (defn inject-font-awesome-css []
   (doto (wd/create-element! "link")
     (wd/set-properties! {:rel "stylesheet"
-                         :href "//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css"})
+                         :href "//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css"})
     (wd/append-to! (wd/$ "head"))))
 
 (defn ^:export init []
@@ -82,15 +82,17 @@
         youtube-id (yt/current-video-id)
         reconciler (p/reconciler
                      {:state  {:youtube/current-video youtube-id
-                               :app/current-track     (or #_ (p/kv-get store youtube-id)
-                                                          (p/blank-track youtube-id))
+                               :app/current-track     (or #_(p/kv-get store youtube-id)
+                                                        (-> (p/blank-track youtube-id)
+                                                            (assoc :track/loops [{:db/id (random-uuid) :loop/label "full" :loop/start 5 :loop/finish 50}
+                                                                                 {:db/id (random-uuid) :loop/label "intro" :loop/start 60 :loop/finish 70}])))
                                :app/visible?          true}
                       :shared {:current-position youtube-video-position}
                       :parser p/parser
                       ;:send   
-                      #_ (fn [{:keys [remote]} cb]
-                        (cb (p/remote-parser {:store store}
-                                             remote)))})]
+                      #_(fn [{:keys [remote]} cb]
+                          (cb (p/remote-parser {:store store}
+                                               remote)))})]
 
     (set! (.-recon js/window) reconciler)
     
@@ -119,8 +121,10 @@
       (println "set current video" video-id))
 
     (go-sub pub :time-update _
-      (when-let [loop (read-selected-loop (get-in reconciler [:config :state]))]
-        (loop-back (yt/get-video) loop)))
+      (let [video (yt/get-video)]
+        (om/transact! reconciler `[(app/update-current-time {:value ~(wd/video-current-time video)}) :video/current-time])
+        (when-let [loop (read-selected-loop (get-in reconciler [:config :state]))]
+          (if-not (empty? loop) (loop-back video loop)))))
 
     (go-sub pub :set-playback-rate [_ rate]
       (track/track-playback-rate-changed rate)

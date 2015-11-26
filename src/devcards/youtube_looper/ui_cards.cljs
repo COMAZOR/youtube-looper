@@ -86,7 +86,9 @@
                         :min      0
                         :max      100
                         :value    pos
-                        :onChange #(reset! video-position (js/parseInt (.. % -target -value)))}))))
+                        :onChange #(let [value (js/parseInt (.. % -target -value))]
+                                    (om/transact! reconciler `[(app/update-current-time {:value ~value}) :video/current-time])
+                                    (reset! video-position value))}))))
   video-position)
 
 (defcard loop-page-card

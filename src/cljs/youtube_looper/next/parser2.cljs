@@ -11,18 +11,33 @@
 
 ; Local Read
 
-(defn read-local
-  [{:keys [query ast db-path] :as env} key params]
-  (case key
-    :db/id (if (om/ref? (:key ast))
-             {:value (p/parse-join-with-reader read-local (assoc env :db-path []) (:key ast))}
-             (p/db-value env key))
-    ;:ui/checked (p/ui-attribute env key)
-    :app/current-track {:value (p/parse-join-with-reader read-local env key)}
-    :track/new-loop {:value (or (p/parse-join-with-reader read-local env key))}
-    :track/loops {:value (p/parse-join-with-reader read-local env key)}
+#_ (defn read-local
+     [{:keys [ast query state] :as env} key _]
+     (let [st @state]
+       (case key
+         :track/new-loop2 {:value (om/db->tree query (get st :track/new-loop) st)}
 
-    (p/db-value env key)))
+         {:value (if query
+                   (om/db->tree query (get st key) st)
+                   (get st key))})))
+
+(defn read-local
+  [{:keys [ast query state] :as env} key _]
+  (let [st @state]
+    (println "read key" key)
+    (when (= key :video/current-time)
+      (println "get current time" key query ast))
+    (case key
+      :db/id (if (om/ident? (:key ast))
+               {:value (p/parse-join-with-reader read-local (assoc env :db-path []) (:key ast))}
+               (p/db-value env key))
+      :app/current-track {:value (p/parse-join-with-reader read-local env key)}
+      :track/loops {:value (p/parse-join-with-reader read-local env key)}
+      :track/new-loop {:value (p/parse-join-with-reader read-local env key)}
+      :track/new-loop2 {:value (p/parse-join-with-reader read-local env :track/new-loop)}
+      :video/current-time {:value (p/dbget (assoc env :db-path []) key 0)}
+
+      (p/db-value env key))))
 
 ; Local Mutations
 
@@ -53,6 +68,10 @@
   [{:keys [state ref]} _ {:keys [db/id] :as loop}]
   {:action (fn [] (swap! state #(-> (update-in % (conj ref :track/loops) (remove-ref loop))
                                     (update :db/id dissoc id))))})
+
+(defmethod mutate 'app/update-current-time
+  [{:keys [state]} _ {:keys [value]}]
+  {:action (fn [] (swap! state assoc :video/current-time value))})
 
 ; Remote Read
 
