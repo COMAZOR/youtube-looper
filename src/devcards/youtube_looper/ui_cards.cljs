@@ -3,9 +3,10 @@
             [cljs.core.async :as async]
             [om.next :as om :refer-macros [defui]]
             [om.dom :as dom]
-            [wilkerdev.util.dom :as wd]
+            [youtube-looper.next.kv-stores :as kv]
             [youtube-looper.next.parser2 :as p]
-            [youtube-looper.next.ui :as ui])
+            [youtube-looper.next.ui :as ui]
+            [wilkerdev.util.dom :as wd])
   (:require-macros [devcards.core :as dc :refer [defcard deftest dom-node]]))
 
 (def video-position (atom 0))
@@ -13,13 +14,12 @@
 (def track
   {:youtube/id     "123"
    :db/id          (random-uuid)
-   :track/duration 100
    :track/loops    [{:db/id (random-uuid) :loop/label "full" :loop/start 5 :loop/finish 50}
                     {:db/id (random-uuid) :loop/label "intro" :loop/start 60 :loop/finish 70}]
    :track/new-loop {:db/id (random-uuid)}})
 
-#_ (def fake-store
-  (p/map-kv-store {"123" track}))
+(def fake-store
+  (kv/map-kv-store {"123" track}))
 
 #_ (def reconciler
   (om/reconciler
@@ -34,14 +34,15 @@
                                      remote)))}))
 
 (def initial-state
-  {:youtube/current-video "123"
-   :app/visible?          true
-   :app/current-track     track})
+  {:youtube/current-video "1234"
+   :app/visible?          true})
 
-(def reconciler
+(defonce reconciler
   (p/reconciler {:state  initial-state
                  :shared {:current-position #(deref video-position)
-                          :bus (async/chan 1024)}}))
+                          :current-duration #(-> 100)
+                          :bus (async/chan 1024)}
+                 :send (partial p/send fake-store)}))
 
 #_ (def reconciler-local-storage
   (om/reconciler
@@ -57,7 +58,10 @@
   (ui/new-loop-row {}))
 
 (defcard new-loop-with-start
-  (ui/new-loop-row {:loop/start 90}))
+  (ui/new-loop-row {:loop/start 90 :video/current-time 110}))
+
+(defcard new-loop-with-start-under
+  (ui/new-loop-row {:loop/start 90 :video/current-time 80}))
 
 (defcard loop-row-sample
   (ui/loop-row {:loop/start  123

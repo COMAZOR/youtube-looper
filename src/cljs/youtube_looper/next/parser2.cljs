@@ -3,6 +3,7 @@
             [youtube-looper.next.kv-stores :as kv]
             [om-tutorial.parsing :as p]
             [om.next :as om]
+            [youtube-looper.next.ui :as ui]
             [wilkerdev.local-storage :as ls]))
 
 (defn blank-track [id]
@@ -31,10 +32,12 @@
                {:value (p/parse-join-with-reader read-local (assoc env :db-path []) (:key ast))}
                (p/db-value env key))
       :app/current-track {:value (p/parse-join-with-reader read-local env key)}
+      :track/duration {:value ((get-in env [:shared :current-duration]))}
       :track/loops {:value (p/parse-join-with-reader read-local env key)}
       :track/new-loop {:value (p/parse-join-with-reader read-local env key)}
       :track/new-loop2 {:value (p/parse-join-with-reader read-local env :track/new-loop)}
       :video/current-time {:value (p/dbget (assoc env :db-path []) key 0)}
+      
 
       (p/db-value env key))))
 
@@ -76,11 +79,16 @@
 
 ; Remote Read
 
+(defn debug
+  ([v] (debug "" v))
+  ([l v] (js/console.info l) (cljs.pprint/pprint v) v))
+
 (defn read-remote
-  [env key params]
+  [{:keys [state] :as env} key params]
   (case key
-    :widget (p/recurse-remote env key true)
-    :people (p/fetch-if-missing env key :make-root)
+    ;:app/current-track (p/recurse-remote env key true)
+    :app/current-track (some-> (p/fetch-if-missing env key true)
+                               (assoc-in [:remote :params] {:youtube/id (get @state :youtube/current-video)}))
     :not-remote))
 
 ; Building blocks
@@ -89,16 +97,52 @@
   (om/parser {:read   (p/new-read-entry-point read-local {:remote read-remote})
               :mutate mutate}))
 
-(defn send [{:keys [remote]} cb]
-  #_(let [{:keys [query rewrite]} (om/process-roots remote) ;; FIXME: BUG: process-roots should NOT return empty!
-          server-response (simulated-server query)]
-      (js/setTimeout (fn []
-                       (println "SERVER response is: " server-response)
-                       (cb (rewrite server-response))
-                       ) 100)))
-
 (defn reconciler [config]
   (om/reconciler (merge config
                         {:parser  parser
                          :id-key  :db/id
                          :pathopt false})))
+
+; Server
+
+(defn remove-entity [entity]
+  #(filterv (fn [e] (not= (:db/id e) (:db/id entity))) %))
+
+(defmulti remote-read om/dispatch)
+
+(defmethod remote-read :app/current-track [{:keys [store]} _ {:keys [youtube/id]}]
+  {:value (or (kv/kv-get store id)
+              (let [track (blank-track id)]
+                (kv/kv-set! store id track)
+                track))})
+
+(defmulti remote-mutate om/dispatch)
+
+(defmethod remote-mutate 'track/new-loop [{:keys [store]} _ {:keys [youtube/id loop] :as base}]
+  {:action #(kv/kv-update! store id (fn [track] (-> (or track (dissoc base :loop))
+                                                 (update :track/loops conj loop))))})
+
+(defn find-loop [{:keys [track/loops]} {:keys [db/id]}]
+  (->> (keep-indexed #(if (= (:db/id %2) id) %) loops)
+       first))
+
+(defmethod remote-mutate 'track/update-loop [{:keys [store]} _ {:keys [youtube/id loop]}]
+  {:action
+   #(kv/kv-update! store id
+                (fn [track]
+                  (update-in track [:track/loops (find-loop track loop)] merge loop)))})
+
+(defmethod remote-mutate 'track/remove-loop [{:keys [store]} _ {:keys [youtube/id loop]}]
+  {:action #(kv/kv-update! store id (fn [track] (update-in track [:track/loops] (remove-entity loop))))})
+
+(def remote-parser (om/parser {:read remote-read :mutate remote-mutate}))
+
+(defn send [store {:keys [remote]} cb]
+  (let [{:keys [query rewrite]} (om/process-roots (debug "base query" remote)) ;; FIXME: BUG: process-roots should NOT return empty!
+        server-response (remote-parser {:store store} (debug "query" query))
+        tree-db #(om/tree->db ui/LoopPage % true)]
+    (js/setTimeout (fn []
+                     (cb (->> server-response
+                              (rewrite)
+                              (tree-db)))
+                     ) 100)))

@@ -27,7 +27,12 @@
                                                           :start 10}
                                                       12 {:db/id  12
                                                           :finish 20}}})}
-                   [{:app/current-track [:some {:track/loops [:start :finish]}]}]))))
+                   [{:app/current-track [:some {:track/loops [:start :finish]}]}])))
+
+  (is (= {}
+         (p/parser {:state (atom {})}
+           [{:app/current-track [{:track/loops [:start :finish]}]}]
+           :remote))))
 
 (deftest test-app-visible?
   (is (= {:app/visible? true}
@@ -59,3 +64,5 @@
            (p/parser {:state state}
                      [(list 'track/remove-loop {:db/id "123" :loop sample-loop})]
                      :remote)))))
+
+(deftest test-read-app-remote)

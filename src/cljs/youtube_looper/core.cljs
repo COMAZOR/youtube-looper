@@ -69,6 +69,8 @@
   (let [pos (some-> (yt/get-video) (wd/video-current-time))]
     (if (js/isNaN pos) nil pos)))
 
+(defn youtube-video-duration [] (some-> (yt/get-video) (wd/video-duration)))
+
 (defn inject-font-awesome-css []
   (doto (wd/create-element! "link")
     (wd/set-properties! {:rel "stylesheet"
@@ -83,11 +85,10 @@
         reconciler (p/reconciler
                      {:state  {:youtube/current-video youtube-id
                                :app/current-track     (or #_(p/kv-get store youtube-id)
-                                                        (-> (p/blank-track youtube-id)
-                                                            (assoc :track/loops [{:db/id (random-uuid) :loop/label "full" :loop/start 5 :loop/finish 50}
-                                                                                 {:db/id (random-uuid) :loop/label "intro" :loop/start 60 :loop/finish 70}])))
+                                                        (-> (p/blank-track youtube-id)))
                                :app/visible?          true}
                       :shared {:current-position youtube-video-position
+                               :current-duration youtube-video-duration
                                :bus bus}
                       :parser p/parser
                       ;:send   
@@ -112,15 +113,14 @@
       
       (track/track-extension-loaded)
 
-      (swap! (get-in reconciler [:config :state]) #(assoc-in % [:app/current-track :track/duration]
-                                                             (wd/video-duration (yt/get-video))))
-      
       (setup-video-time-update bus)
       (om/add-root! reconciler ui/LoopPage (dialog-container)))
 
     (go-sub pub :video-load [_ video-id]
-      (println "set current video" video-id))
-    
+      (println "set current video" video-id)
+      (swap! (get-in reconciler [:config :state]) #(assoc-in % [:app/current-track :track/duration]
+                                                             (wd/video-duration (yt/get-video)))))
+
     (go-sub pub :seek-to [_ time]
       (wd/video-seek! (yt/get-video) time))
 

@@ -214,7 +214,6 @@
   (let [cached-read-ok? (not (= target (:target ast)))
         value (dbget env key nil)
         as-root? (or (true? as-root?) (= :make-root as-root?))]
-    (println "FETCH " ast " as root? " as-root?)
     (if (and cached-read-ok? (not= nil value))
       nil
       {target
