@@ -7,22 +7,12 @@
             [wilkerdev.local-storage :as ls]))
 
 (defn blank-track [id]
-  {:db/id (random-uuid)
-   :youtube/id id
+  {:db/id          (random-uuid)
+   :youtube/id     id
    :track/new-loop {:db/id (random-uuid)}
-   :track/loops []})
+   :track/loops    []})
 
 ; Local Read
-
-#_ (defn read-local
-     [{:keys [ast query state] :as env} key _]
-     (let [st @state]
-       (case key
-         :track/new-loop2 {:value (om/db->tree query (get st :track/new-loop) st)}
-
-         {:value (if query
-                   (om/db->tree query (get st key) st)
-                   (get st key))})))
 
 (defn read-local
   [{:keys [ast query state] :as env} key _]
@@ -38,7 +28,6 @@
       :track/new-loop2 {:value (p/parse-join-with-reader read-local env :track/new-loop)}
       :video/current-time {:value (p/dbget (assoc env :db-path []) key 0)}
       
-
       (p/db-value env key))))
 
 ; Local Mutations
@@ -63,30 +52,49 @@
              (if id (async/put! bus [:seek-to start]))
              (swap! state assoc-in (conj ref :track/selected-loop) (if id [:db/id id])))})
 
+(defn add-loop [st ref {:keys [db/id] :as loop}]
+  (-> (update-in st (conj ref :track/loops) conj [:db/id id])
+      (assoc-in [:db/id id] loop)))
+
+(defn read-track [st]
+  (om/db->tree [:db/id
+                :youtube/id
+                {:track/loops [:db/id :loop/label :loop/start :loop/finish]}]
+               (:app/current-track st) st))
+
+(defn remote-save-track [state]
+  (-> (om/query->ast `[(track/save ~(read-track @state))])
+      (get-in [:children 0])))
+
 (defmethod mutate 'track/new-loop
-  [{:keys [state ref]} _ {:keys [db/id] :as loop}]
-  {:action (fn [] (swap! state #(-> (update-in % (conj ref :track/loops) conj [:db/id id])
-                                    (assoc-in [:db/id id] loop))))})
+  [{:keys [ast state ref]} _ loop]
+  {:action (fn [] (swap! state #(add-loop % ref loop)))
+   :remote (remote-save-track state)})
 
 (defmethod mutate 'track/remove-loop
-  [{:keys [state ref]} _ {:keys [db/id] :as loop}]
+  [{:keys [state ref ast]} _ {:keys [db/id] :as loop}]
   {:action (fn [] (swap! state #(-> (update-in % (conj ref :track/loops) (remove-ref loop))
-                                    (update :db/id dissoc id))))})
+                                    (update :db/id dissoc id))))
+   :remote (remote-save-track state)})
+
+(defmethod mutate 'track/update-loop
+  [{:keys [state ref ast]} _ props]
+  {:action (fn [] (if ref (swap! state update-in ref merge props)))
+   :remote (remote-save-track state)})
 
 (defmethod mutate 'app/update-current-time
-  [{:keys [state]} _ {:keys [value]}]
+  [{:keys [state ast]} _ {:keys [value]}]
   {:action (fn [] (swap! state assoc :video/current-time value))})
 
-; Remote Read
+(defmethod mutate 'track/save
+  [_ _ _]
+  {:remote true})
 
-(defn debug
-  ([v] (debug "" v))
-  ([l v] (js/console.info l) (cljs.pprint/pprint v) v))
+; Remote Read
 
 (defn read-remote
   [{:keys [state] :as env} key params]
   (case key
-    ;:app/current-track (p/recurse-remote env key true)
     :app/current-track (some-> (p/fetch-if-missing env key true)
                                (assoc-in [:remote :params] {:youtube/id (get @state :youtube/current-video)}))
     :not-remote))
@@ -105,9 +113,6 @@
 
 ; Server
 
-(defn remove-entity [entity]
-  #(filterv (fn [e] (not= (:db/id e) (:db/id entity))) %))
-
 (defmulti remote-read om/dispatch)
 
 (defmethod remote-read :app/current-track [{:keys [store]} _ {:keys [youtube/id]}]
@@ -118,31 +123,16 @@
 
 (defmulti remote-mutate om/dispatch)
 
-(defmethod remote-mutate 'track/new-loop [{:keys [store]} _ {:keys [youtube/id loop] :as base}]
-  {:action #(kv/kv-update! store id (fn [track] (-> (or track (dissoc base :loop))
-                                                 (update :track/loops conj loop))))})
-
-(defn find-loop [{:keys [track/loops]} {:keys [db/id]}]
-  (->> (keep-indexed #(if (= (:db/id %2) id) %) loops)
-       first))
-
-(defmethod remote-mutate 'track/update-loop [{:keys [store]} _ {:keys [youtube/id loop]}]
-  {:action
-   #(kv/kv-update! store id
-                (fn [track]
-                  (update-in track [:track/loops (find-loop track loop)] merge loop)))})
-
-(defmethod remote-mutate 'track/remove-loop [{:keys [store]} _ {:keys [youtube/id loop]}]
-  {:action #(kv/kv-update! store id (fn [track] (update-in track [:track/loops] (remove-entity loop))))})
+(defmethod remote-mutate 'track/save [{:keys [store]} _ {:keys [youtube/id] :as track}]
+  {:action #(kv/kv-set! store id track)})
 
 (def remote-parser (om/parser {:read remote-read :mutate remote-mutate}))
 
 (defn send [store {:keys [remote]} cb]
-  (let [{:keys [query rewrite]} (om/process-roots (debug "base query" remote)) ;; FIXME: BUG: process-roots should NOT return empty!
-        server-response (remote-parser {:store store} (debug "query" query))
+  (let [{:keys [query rewrite]} (om/process-roots remote)
+        server-response (remote-parser {:store store} query)
         tree-db #(om/tree->db ui/LoopPage % true)]
-    (js/setTimeout (fn []
-                     (cb (->> server-response
-                              (rewrite)
-                              (tree-db)))
-                     ) 100)))
+    (js/setTimeout #(cb (->> server-response
+                             (rewrite)
+                             (tree-db)))
+                   100)))

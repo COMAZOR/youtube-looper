@@ -12,6 +12,25 @@
 
 (def sample-loop (mk-loop 10 20))
 
+(deftest test-read-app
+  (is (= {:app/visible?          true}
+         (p/parser {:state (atom {:app/visible?          true
+                                  :app/current-track [:db/id nil]
+                                  :youtube/current-video "123"})
+                    :shared {:current-position #(-> 0)
+                             :current-duration #(-> 40)}}
+           (om/get-query ui/LoopPage))))
+  
+  (is (= {}
+         (p/parser {:state (atom {:app/visible?          true
+                                  :app/current-track [:db/id nil]
+                                  :youtube/current-video "123"
+                                  :db/id {nil {:db/id nil}}})
+                    :shared {:current-position #(-> 0)
+                             :current-duration #(-> 40)}}
+           (om/get-query ui/LoopPage)
+           :remote))))
+
 (deftest test-read-app-current-track
   (is (= {}
          (p/parser {:state (atom {})}
@@ -32,6 +51,19 @@
   (is (= {}
          (p/parser {:state (atom {})}
            [{:app/current-track [{:track/loops [:start :finish]}]}]
+           :remote))))
+
+(deftest test-new-loop
+  (is (= ['(track/save
+             {:db/id       10,
+              :youtube/id  "123",
+              :track/loops [{:db/id 4, :loop/start 5, :loop/finish 20}]})]
+         (p/parser {:state (atom {:app/current-track [:db/id 10]
+                                  :db/id {10 {:db/id 10
+                                              :youtube/id "123"
+                                              :track/loops []}}})
+                    :ref [:db/id 10]}
+           [(list 'track/new-loop {:db/id 4 :loop/start 5 :loop/finish 20})]
            :remote))))
 
 (deftest test-app-visible?

@@ -21,10 +21,8 @@
 
 (defrecord LocalStorageKVStore [prefix]
   KVSyncStore
-  (kv-get [_ key](ls/get (str prefix (name key))))
-  (kv-set! [_ key value]
-    (do
-      (ls/set! (str prefix (name key)) value))))
+  (kv-get [_ key] (ls/get (str prefix (name key))))
+  (kv-set! [_ key value] (ls/set! (str prefix (name key)) value)))
 
 (defn local-storage-kv-store
   ([] (LocalStorageKVStore. ""))

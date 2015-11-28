@@ -21,20 +21,8 @@
 (def fake-store
   (kv/map-kv-store {"123" track}))
 
-#_ (def reconciler
-  (om/reconciler
-    {:state  {:youtube/current-video "123"
-              :app/visible?          true
-              :app/current-track     track}
-     :shared {:current-position #(deref video-position)}
-     :parser p/parser
-     :send   (fn [{:keys [remote]} cb]
-               (println "REMOTE" remote)
-               (cb (p/remote-parser {:store fake-store}
-                                     remote)))}))
-
 (def initial-state
-  {:youtube/current-video "1234"
+  {:youtube/current-video "123"
    :app/visible?          true})
 
 (defonce reconciler

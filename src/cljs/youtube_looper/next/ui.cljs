@@ -88,10 +88,14 @@
   (let [value (get (om/props c) prop)
         {:keys [selected]} (om/get-computed c)]
     (dom/div #js {:style (css s/flex-row-center {:padding "0 5px"})}
-      (dom/a #js {:href "#" :onClick (pd #(om/transact! c `[(entity/set {~prop ~(dec value)}) :app/current-track]))}
+      (dom/a #js {:href "#" :onClick (pd #(do
+                                           (om/transact! c `[(track/update-loop {~prop ~(dec value)}) :app/current-track])
+                                           (call-computed c :save-track)))}
         (icon "chevron-circle-down" s/fs-15))
       (dom/div #js {:style (css {:padding "0 7px"})} (u/seconds->time value))
-      (dom/a #js {:href "#" :onClick (pd #(om/transact! c `[(entity/set {~prop ~(inc value)}) :app/current-track]))}
+      (dom/a #js {:href "#" :onClick (pd #(do
+                                           (om/transact! c `[(track/update-loop {~prop ~(inc value)}) :app/current-track])
+                                           (call-computed c :save-track)))}
         (icon "chevron-circle-up" s/fs-15)))))
 
 (defui LoopRow
@@ -112,8 +116,9 @@
           (dom/a #js {:href "#" :onClick (pd #(call-computed this :on-select))}
             (icon "play-circle" s/fs-23)))
         (dom/div #js {:style   (css s/loop-label {:cursor "pointer"})
-                      :onClick #(if-let [label (js/prompt "New Label" (or label ""))]
-                                 (om/transact! this `[(entity/set {:loop/label ~label}) :app/current-track]))}
+                      :onClick #(when-let [label (js/prompt "New Label" (or label ""))]
+                                 (om/transact! this `[(track/update-loop {:loop/label ~label}) :app/current-track])
+                                 (call-computed this :save-track))}
           (if label
             label
             (dom/i nil "No Label")))
@@ -194,6 +199,15 @@
   (let [id (-> c om/props :db/id)]
     (om/transact! c `[(track/select-loop ~loop) :app/current-track])))
 
+(defn clean-track [track]
+  (-> track
+      (select-keys [:db/id :youtube/id :track/loops :track/duration])
+      (update :track/loops #(map (fn [x] (select-keys x [:db/id :loop/label :loop/start :loop/finish])) %))))
+
+(defn save-track [c]
+  (js/setTimeout (fn [] (om/transact! c `[(track/save ~(clean-track (om/props c)))]))
+              10))
+
 (defui LoopManager
   static om/IQuery
   (query [this]
@@ -214,6 +228,7 @@
           (new-loop-row (om/computed new-loop {:on-submit #(create-loop this %)}))
           (->> (map #(om/computed % {:on-delete          (partial delete-loop this %)
                                      :on-select          (partial select-loop this %)
+                                     :save-track         (partial save-track this)
                                      :on-clean-selection (partial select-loop this nil)
                                      :selected           (= (get-in track [:track/selected-loop :db/id]) (:db/id %))})
                     (sort-by :loop/start loops))
@@ -240,6 +255,6 @@
                            :title     "Show Loops"
                            :style     (css s/youtube-action-button)
                            :onClick   #(om/transact! this `[(entity/set {:app/visible? ~(not visible?)}) :app/current-track])} "AB"))
-        (if visible? (loop-manager current-track))))))
+        (if (and visible? current-track) (loop-manager current-track))))))
 
 (def loop-page (om/factory LoopPage))

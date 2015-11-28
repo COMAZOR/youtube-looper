@@ -9,6 +9,7 @@
             [youtube-looper.next.ui :as ui]
             [youtube-looper.youtube :as yt]
             [youtube-looper.track :as track]
+            [youtube-looper.next.kv-stores :as kv]
             [wilkerdev.util.dom :as wd :refer [$]]))
 
 (enable-console-print!)
@@ -59,17 +60,19 @@
         (block-key-propagation)
         (wd/append-to! ($ "#movie_player")))))
 
-#_ (def store (p/map-kv-store {}))
+(def store (kv/local-storage-kv-store "looper-test"))
 
 (defn read-selected-loop [state]
   (let [{:keys [app/current-track]} (p/parser {:state state} [{:app/current-track [{:track/selected-loop [:loop/start :loop/finish]}]}])]
     (get current-track :track/selected-loop)))
 
-(defn youtube-video-position []
-  (let [pos (some-> (yt/get-video) (wd/video-current-time))]
-    (if (js/isNaN pos) nil pos)))
+(defn norm-nan [v] (if (js/isNaN v) nil v))
 
-(defn youtube-video-duration [] (some-> (yt/get-video) (wd/video-duration)))
+(defn youtube-video-position []
+  (some-> (yt/get-video) (wd/video-current-time) (norm-nan)))
+
+(defn youtube-video-duration []
+  (some-> (yt/get-video) (wd/video-duration) (norm-nan)))
 
 (defn inject-font-awesome-css []
   (doto (wd/create-element! "link")
@@ -79,22 +82,20 @@
 
 (defn ^:export init []
   (track/initialize "55eGVmS7Ty7Sa4cLxwpKL235My8elBtQBOk4wx1R" "ghUQSvjYReHqwNhdOROgzI3xm0aybyarCXW30usM")
-  (let [bus (chan 1024 (map (partial debug-input "flux message")))
+  (println "initialized")
+  (let [bus (chan (async/sliding-buffer 512) (map (partial debug-input "flux message")))
         pub (async/pub bus first)
         youtube-id (yt/current-video-id)
         reconciler (p/reconciler
                      {:state  {:youtube/current-video youtube-id
-                               :app/current-track     (or #_(p/kv-get store youtube-id)
+                               :app/current-track     (or (kv/kv-get store youtube-id)
                                                         (-> (p/blank-track youtube-id)))
                                :app/visible?          true}
                       :shared {:current-position youtube-video-position
                                :current-duration youtube-video-duration
-                               :bus bus}
-                      :parser p/parser
-                      ;:send   
-                      #_(fn [{:keys [remote]} cb]
-                          (cb (p/remote-parser {:store store}
-                                               remote)))})]
+                               :bus              bus}
+                      :send   (partial p/send store)
+                      :logger nil})]
 
     (set! (.-recon js/window) reconciler)
     
@@ -109,7 +110,7 @@
       ; wait video element to be available
       (<! (wait-for-presence yt/get-video))
       ; wait for video duration to be available
-      (<! (wait-for-presence #(not (js/isNaN (wd/video-duration (yt/get-video))))))
+      (<! (wait-for-presence youtube-video-duration))
       
       (track/track-extension-loaded)
 
@@ -117,9 +118,8 @@
       (om/add-root! reconciler ui/LoopPage (dialog-container)))
 
     (go-sub pub :video-load [_ video-id]
-      (println "set current video" video-id)
-      (swap! (get-in reconciler [:config :state]) #(assoc-in % [:app/current-track :track/duration]
-                                                             (wd/video-duration (yt/get-video)))))
+      ; TODO update current video
+      )
 
     (go-sub pub :seek-to [_ time]
       (wd/video-seek! (yt/get-video) time))
