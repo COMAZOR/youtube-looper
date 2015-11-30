@@ -60,7 +60,7 @@
         (block-key-propagation)
         (wd/append-to! ($ "#movie_player")))))
 
-(def store (kv/local-storage-kv-store "looper-test"))
+(def store (kv/local-storage-kv-store "youtube-looper-"))
 
 (defn read-selected-loop [state]
   (let [{:keys [app/current-track]} (p/parser {:state state} [{:app/current-track [{:track/selected-loop [:loop/start :loop/finish]}]}])]
