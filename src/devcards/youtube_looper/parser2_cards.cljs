@@ -10,6 +10,8 @@
   ([start finish label]
    {:db/id (random-uuid) :loop/start start :loop/finish finish :loop/label label}))
 
+(defn app-state [data] (atom (om/tree->db ui/LoopPage data)))
+
 (def sample-loop (mk-loop 10 20))
 
 (deftest test-read-app
@@ -20,8 +22,15 @@
                     :shared {:current-position #(-> 0)
                              :current-duration #(-> 40)}}
            (om/get-query ui/LoopPage))))
-  
-  (is (= {}
+
+  (is (= (p/parser {:state (atom {:app/visible?          true
+                                  :youtube/current-video "123"})
+                    :shared {:current-position #(-> 0)
+                             :current-duration #(-> 40)}}
+           (om/get-query ui/LoopPage))
+         {:app/visible? true}))
+
+  (is (= []
          (p/parser {:state (atom {:app/visible?          true
                                   :app/current-track [:db/id nil]
                                   :youtube/current-video "123"
@@ -48,23 +57,27 @@
                                                           :finish 20}}})}
                    [{:app/current-track [:some {:track/loops [:start :finish]}]}])))
 
-  (is (= {}
+  (is (= [[{:app/current-track [{:track/loops [:start :finish]}]}
+           {:youtube/id nil}]]
          (p/parser {:state (atom {})}
            [{:app/current-track [{:track/loops [:start :finish]}]}]
            :remote))))
+
+(defn remote-call [parser env query]
+  (p/parser env query)
+  (p/parser env query :remote))
 
 (deftest test-new-loop
   (is (= ['(track/save
              {:db/id       10,
               :youtube/id  "123",
               :track/loops [{:db/id 4, :loop/start 5, :loop/finish 20}]})]
-         (p/parser {:state (atom {:app/current-track [:db/id 10]
-                                  :db/id {10 {:db/id 10
-                                              :youtube/id "123"
-                                              :track/loops []}}})
-                    :ref [:db/id 10]}
-           [(list 'track/new-loop {:db/id 4 :loop/start 5 :loop/finish 20})]
-           :remote))))
+         (remote-call p/parser {:state (atom {:app/current-track [:db/id 10]
+                                  :db/id             {10 {:db/id       10
+                                                          :youtube/id  "123"
+                                                          :track/loops []}}})
+                    :ref   [:db/id 10]}
+           [(list 'track/new-loop {:db/id 4 :loop/start 5 :loop/finish 20})]))))
 
 (deftest test-app-visible?
   (is (= {:app/visible? true}
@@ -91,10 +104,21 @@
              {:db/id       "123"
               :youtube/id  "a12"
               :track/loops []}}}
-           @state))
-    #_ (is (= [(list 'track/remove-loop {:db/id "123" :youtube/id "a12" :loop sample-loop})]
-           (p/parser {:state state}
-                     [(list 'track/remove-loop {:db/id "123" :loop sample-loop})]
-                     :remote)))))
+           @state))))
 
-(deftest test-read-app-remote)
+(deftest test-update-current-video
+  (is (= (p/parser {:state (app-state {:youtube/current-video "123"
+                                       :app/current-track     {:db/id      321
+                                                               :youtube/id "123"}})}
+           '[(app/change-video {:youtube/id "abc"})])
+         {'app/change-video
+          {:keys   [:app/current-track :youtube/current-video],
+           :result {:youtube/current-video "abc"}}}))
+
+  (is (= (p/parser {:state (app-state {:youtube/current-video "123"
+                                       :app/current-track     {:db/id      321
+                                                               :youtube/id "123"}})}
+           '[(app/change-video {:youtube/id "123"})])
+         {'app/change-video
+          {:keys   [:app/current-track :youtube/current-video],
+           :result {:youtube/current-video "123", :app/current-track [:db/id 321]}}})))

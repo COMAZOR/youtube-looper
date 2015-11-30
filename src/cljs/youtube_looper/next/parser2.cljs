@@ -90,6 +90,12 @@
   [_ _ _]
   {:remote true})
 
+(defmethod mutate 'app/change-video [{:keys [state]} _ {:keys [youtube/id]}]
+  {:action (fn [] (swap! state #(cond-> %
+                                 (not= id (:youtube/current-video %)) (-> (dissoc % :app/current-track)
+                                                                          (assoc :youtube/current-video id)))))
+   :value  {:keys [:app/current-track :youtube/current-video]}})
+
 ; Remote Read
 
 (defn read-remote
@@ -132,7 +138,6 @@
   (let [{:keys [query rewrite]} (om/process-roots remote)
         server-response (remote-parser {:store store} query)
         tree-db #(om/tree->db ui/LoopPage % true)]
-    (js/setTimeout #(cb (->> server-response
-                             (rewrite)
-                             (tree-db)))
-                   100)))
+    (cb (->> server-response
+              (rewrite)
+              (tree-db)))))

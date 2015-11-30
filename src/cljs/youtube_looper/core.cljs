@@ -86,16 +86,16 @@
   (let [bus (chan (async/sliding-buffer 512) (map (partial debug-input "flux message")))
         pub (async/pub bus first)
         youtube-id (yt/current-video-id)
+        state (atom {:youtube/current-video youtube-id
+                     :app/visible?          true})
         reconciler (p/reconciler
-                     {:state  {:youtube/current-video youtube-id
-                               :app/current-track     (or (kv/kv-get store youtube-id)
-                                                        (-> (p/blank-track youtube-id)))
-                               :app/visible?          true}
-                      :shared {:current-position youtube-video-position
-                               :current-duration youtube-video-duration
-                               :bus              bus}
-                      :send   (partial p/send store)
-                      :logger nil})]
+                     {:state     state
+                      :normalize false
+                      :shared    {:current-position youtube-video-position
+                                  :current-duration youtube-video-duration
+                                  :bus              bus}
+                      :send      (partial p/send store)
+                      :logger    nil})]
 
     (set! (.-recon js/window) reconciler)
     
@@ -107,8 +107,6 @@
 
     (go-sub* pub :video-load _ (chan 1 (take 1))
       (inject-font-awesome-css)
-      ; wait video element to be available
-      (<! (wait-for-presence yt/get-video))
       ; wait for video duration to be available
       (<! (wait-for-presence youtube-video-duration))
       
@@ -118,8 +116,8 @@
       (om/add-root! reconciler ui/LoopPage (dialog-container)))
 
     (go-sub pub :video-load [_ video-id]
-      ; TODO update current video
-      )
+      (<! (wait-for-presence youtube-video-duration))
+      (om/transact! reconciler `[(app/change-video {:youtube/id ~video-id}) :app/current-track]))
 
     (go-sub pub :seek-to [_ time]
       (wd/video-seek! (yt/get-video) time))
