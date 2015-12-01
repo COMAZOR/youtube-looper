@@ -1,6 +1,7 @@
 (ns youtube-looper.next.parser2
   (:require [cljs.core.async :as async]
             [youtube-looper.next.stores :as kv]
+            [clojure.set :refer [rename-keys]]
             [om-tutorial.parsing :as p]
             [om.next :as om]
             [youtube-looper.next.ui :as ui]
@@ -159,8 +160,11 @@
     (or (kv/kv-get main-store key)
         (if-let [loops (kv/kv-get secondary-store key)]
           (-> (blank-track key)
-              (assoc :track/loops (mapv #(assoc % :db/id (random-uuid)) loops))))))
-  
+              (assoc :track/loops (mapv #(-> (rename-keys % {:name :loop/label
+                                                             :start :loop/start
+                                                             :finish :loop/finish})
+                                             (assoc :db/id (random-uuid))) loops))))))
+
   (kv-set! [_ key value] (kv/kv-set! main-store key value)))
 
 (defn migration-store [main-store secondary-store] (MigrationStore. main-store secondary-store))

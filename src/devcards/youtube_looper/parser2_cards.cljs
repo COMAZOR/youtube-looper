@@ -130,16 +130,22 @@
 
 (deftest test-migration-store
   (let [main (kv/map-kv-store {"ab" :main-loop})
-        secondary (kv/map-kv-store {"cd" [{:loop/label "a"} {:loop/label "b"}]})
+        secondary (kv/map-kv-store {"cd" [{:loop/start 5
+                                           :loop/finish 10
+                                           :loop/label "a"}
+                                          {:start 1
+                                           :finish 10
+                                           :name "b"}]})
         mstore (p/migration-store main secondary)]
     (kv/kv-set! mstore "k" "v")
     
     (is (= (kv/kv-get mstore "123") nil))
     (is (= (kv/kv-get mstore "ab") :main-loop))
     (is (= (without-ids (kv/kv-get mstore "cd"))
-           {:youtube/id     "cd"
+           {:youtube/id "cd"
             :track/new-loop {}
-            :track/loops    [{:loop/label "a"}
-                             {:loop/label "b"}]}))
-    
+            :track/loops
+            [{:loop/start 5 :loop/finish 10 :loop/label "a"}
+             {:loop/label "b" :loop/start 1 :loop/finish 10}]}))
+
     (is (= (kv/kv-get main "k") "v"))))
