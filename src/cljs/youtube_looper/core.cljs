@@ -5,7 +5,7 @@
             [om.next :as om :refer-macros [defui]]
             [wilkerdev.util.dom :as wd]
             [wilkerdev.util.reactive :as r]
-            [youtube-looper.next.parser2 :as p]
+            [youtube-looper.next.parser :as p]
             [youtube-looper.next.ui :as ui]
             [youtube-looper.youtube :as yt]
             [youtube-looper.track :as track]

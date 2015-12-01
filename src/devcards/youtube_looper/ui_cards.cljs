@@ -4,7 +4,7 @@
             [om.next :as om :refer-macros [defui]]
             [om.dom :as dom]
             [youtube-looper.next.stores :as kv]
-            [youtube-looper.next.parser2 :as p]
+            [youtube-looper.next.parser :as p]
             [youtube-looper.next.ui :as ui]
             [wilkerdev.util.dom :as wd])
   (:require-macros [devcards.core :as dc :refer [defcard deftest dom-node]]))
