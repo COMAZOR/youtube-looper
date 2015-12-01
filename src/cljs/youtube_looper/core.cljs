@@ -9,7 +9,7 @@
             [youtube-looper.next.ui :as ui]
             [youtube-looper.youtube :as yt]
             [youtube-looper.track :as track]
-            [youtube-looper.next.kv-stores :as kv]
+            [youtube-looper.next.stores :as kv]
             [wilkerdev.util.dom :as wd :refer [$]]))
 
 {:db/id #uuid "eafc7b83-00ea-4ba1-a6c8-51e15e7a2018"

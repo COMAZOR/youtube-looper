@@ -3,7 +3,7 @@
             [cljs.core.async :as async]
             [om.next :as om :refer-macros [defui]]
             [om.dom :as dom]
-            [youtube-looper.next.kv-stores :as kv]
+            [youtube-looper.next.stores :as kv]
             [youtube-looper.next.parser2 :as p]
             [youtube-looper.next.ui :as ui]
             [wilkerdev.util.dom :as wd])

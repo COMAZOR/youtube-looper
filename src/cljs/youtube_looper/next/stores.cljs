@@ -1,4 +1,4 @@
-(ns youtube-looper.next.kv-stores
+(ns youtube-looper.next.stores
   (:require [wilkerdev.local-storage :as ls]))
 
 ; Key Value Stores

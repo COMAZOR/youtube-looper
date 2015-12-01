@@ -1,6 +1,6 @@
 (ns youtube-looper.next.parser2
   (:require [cljs.core.async :as async]
-            [youtube-looper.next.kv-stores :as kv]
+            [youtube-looper.next.stores :as kv]
             [om-tutorial.parsing :as p]
             [om.next :as om]
             [youtube-looper.next.ui :as ui]
