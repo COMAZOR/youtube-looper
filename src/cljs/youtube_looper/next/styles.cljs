@@ -17,15 +17,14 @@
 (def c-989898-grey "#989898")
 (def c-f12b24-red "#f12b24")
 (def fs-13 {:fontSize 13})
-(def fs-15 {:fontSize 15})
-(def fs-18 {:fontSize 18})
-(def fs-23 {:fontSize 23})
+(def fs-15 {:fontSize "1rem"})
+(def fs-18 {:fontSize "1.15rem"})
+(def fs-23 {:fontSize "1.5rem"})
 
 (def youtube-action-button
   {:verticalAlign "top"
    :textAlign "center"
-   :fontWeight "bold"
-   :fontSize 14})
+   :fontWeight "bold"})
 
 (def hr
   {:background c-989898-grey
@@ -45,7 +44,8 @@
 (def popup-container
   {:background "rgba(28,28,28,0.8)"
    :borderRadius "4px"
-   :display "inline-block"})
+   :display "inline-block"
+   :transition "all 300ms"})
 
 (def time-input
   {:border "1px solid #000"
@@ -58,7 +58,7 @@
   (merge fs-13 {:color c-abaaaa-grey}))
 
 (def body-text 
-  (merge fs-13 {:color c-d3d3d3-grey}))
+  (merge {:color c-d3d3d3-grey}))
 
 (def loop-row
   (merge flex-row-center
@@ -68,4 +68,6 @@
 
 (def loop-label 
   {:padding "0 10px"
-   :width 168})
+   :whiteSpace "nowrap"
+   :textOverflow "ellipsis"
+   :overflow "hidden"})

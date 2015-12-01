@@ -135,7 +135,8 @@
             (icon "pause-circle" s/fs-23))
           (dom/a #js {:href "#" :onClick (pd #(call-computed this :on-select))}
             (icon "play-circle" s/fs-23)))
-        (dom/div #js {:style   (css s/loop-label {:cursor "pointer"})
+        (dom/div #js {:className "youtube-looper-label"
+                      :style   (css s/loop-label {:cursor "pointer"})
                       :onClick #(when-let [label (js/prompt "New Label" (or label ""))]
                                  (om/transact! this `[(track/update-loop {:loop/label ~label}) :app/current-track])
                                  (call-computed this :save-track))}
@@ -187,7 +188,8 @@
             (dom/a #js {:href "#" :onClick (pd #(om/transact! this '[(loop/set-current-video-time {:at :loop/start})]))}
               (icon "plus-circle" s/fs-23)))
 
-          (dom/div #js {:style (css s/loop-label)}
+          (dom/div #js {:className "youtube-looper-label"
+                        :style (css s/loop-label)}
             (dom/div nil
               (if start
                 (if offtime?
@@ -245,7 +247,7 @@
   Object
   (render [this]
     (let [{:keys [track/loops track/new-loop] :as track} (om/props this)]
-      (dom/div #js {:style (css s/popup-container s/body-text)}
+      (dom/div #js {:className "youtube-looper-dialog" :style (css s/popup-container s/body-text)}
         (listener {:event    "keydown"
                    :listener (fn [e]
                                (if (= (.-keyCode e) SHIFT_KEY)
@@ -281,7 +283,7 @@
         (portal {:insert-after ".ytp-settings-button"
                  :style        {:display       "inline-block"
                                 :verticalAlign "top"}}
-          (dom/button #js {:className "ytp-button"
+          (dom/button #js {:className "ytp-button youtube-looper-action-button"
                            :title     "Show Loops"
                            :style     (css s/youtube-action-button)
                            :onClick   #(om/transact! this `[(entity/set {:app/visible? ~(not visible?)}) :app/current-track])} "AB"))

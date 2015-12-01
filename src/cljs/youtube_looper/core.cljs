@@ -12,6 +12,10 @@
             [youtube-looper.next.kv-stores :as kv]
             [wilkerdev.util.dom :as wd :refer [$]]))
 
+{:db/id #uuid "eafc7b83-00ea-4ba1-a6c8-51e15e7a2018"
+ :youtube/id "XWS2xkT6PAg"
+ :track/loops [{:db/id #uuid "2e006dd6-a326-474e-add2-68a0941d1ecd", :loop/label "partes 1-2", :loop/start 464.053317, :loop/finish 470.25279}]}
+
 (enable-console-print!)
 
 (def ^:dynamic *log-debug* false)
@@ -46,11 +50,8 @@
 (defn dialog-container []
   (or ($ ".ytp-looper-container")
       (doto (wd/create-element! "div")
-        (wd/add-class! "ytp-looper-container")
+        (wd/add-class! "youtube-looper-container")
         (wd/set-properties! {"data-layer" 9})
-        (wd/set-style! {:z-index 20
-                         :position "absolute"
-                         :bottom "130px" :right "12px"})
         (wd/append-to! ($ "#movie_player")))))
 
 (def store (kv/local-storage-kv-store "youtube-looper-"))
@@ -80,7 +81,7 @@
         pub (async/pub bus first)
         youtube-id (yt/current-video-id)
         state (atom {:youtube/current-video youtube-id
-                     :app/visible?          true})
+                     :app/visible?          false})
         reconciler (p/reconciler
                      {:state     state
                       :normalize false

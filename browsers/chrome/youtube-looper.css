@@ -1,0 +1,38 @@
+.ytp-button.youtube-looper-action-button {
+  font-size: 14px;
+}
+
+.ytp-big-mode .ytp-button.youtube-looper-action-button {
+  font-size: 24px;
+}
+
+.youtube-looper-container {
+  position: absolute;
+  bottom: 50px;
+  right: 12px;
+  z-index: 20;
+}
+
+.ytp-big-mode .youtube-looper-container {
+  bottom: 80px;
+}
+
+.youtube-looper-dialog {
+  font-size: 13px;
+}
+
+.ytp-big-mode .youtube-looper-dialog {
+  font-size: 21px;
+}
+
+.ytp-autohide .youtube-looper-dialog {
+  opacity: 0;
+}
+
+.youtube-looper-label {
+  width: 168px;
+}
+
+.ytp-big-mode .youtube-looper-label {
+  width: 310px;
+}

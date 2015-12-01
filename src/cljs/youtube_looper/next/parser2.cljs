@@ -68,6 +68,7 @@
 (defn read-track [st]
   (om/db->tree [:db/id
                 :youtube/id
+                {:track/new-loop [:db/id]}
                 {:track/loops [:db/id :loop/label :loop/start :loop/finish]}]
                (:app/current-track st) st))
 
