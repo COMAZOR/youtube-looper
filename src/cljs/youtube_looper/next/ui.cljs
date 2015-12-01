@@ -181,13 +181,15 @@
         (dom/div #js {:style (css s/flex-row-center)}
           (if start
             (if offtime?
-              (dom/a #js {:href "#" :onClick (pd #(om/transact! this '[(loop/set-current-video-time {:at :loop/start})] :app/current-track))}
+              (dom/a #js {:href "#" :onClick (pd #(om/transact! this '[(loop/set-current-video-time {:at :loop/start}) () :app/current-track]))}
                 (icon "plus-circle" s/fs-23))
               
-              (dom/a #js {:href "#" :onClick (pd #(om/transact! this '[(loop/set-current-video-time {:at :loop/finish})]))}
+              (dom/a #js {:href "#" :onClick (pd #(om/transact! this '[(loop/set-current-video-time {:at :loop/finish}) :app/current-track]))}
                 (icon "pause-circle" s/fs-23)))
 
-            (dom/a #js {:href "#" :onClick (pd #(om/transact! this '[(loop/set-current-video-time {:at :loop/start}) :app/current-track]))}
+            (dom/a #js {:href "#" :onClick (pd #(do
+                                                 (call-computed this :on-start-new)
+                                                 (om/transact! this '[(loop/set-current-video-time {:at :loop/start}) :app/current-track])))}
               (icon "plus-circle" s/fs-23)))
 
           (dom/div #js {:className "youtube-looper-label"
@@ -260,7 +262,8 @@
                                (if (= (.-keyCode e) SHIFT_KEY)
                                  (om/transact! (om/get-reconciler this) '[(app/set {:app/precision-mode? false}) :app/precision-mode?])))})
         (apply dom/div #js {:style (css {:padding 6})}
-          (new-loop-row (om/computed new-loop {:on-submit #(create-loop this %)}))
+          (new-loop-row (om/computed new-loop {:on-submit #(create-loop this %)
+                                               :on-start-new #(select-loop this nil) }))
           (->> (map #(om/computed % {:on-delete          (partial delete-loop this %)
                                      :on-select          (partial select-loop this %)
                                      :save-track         (partial save-track this)
