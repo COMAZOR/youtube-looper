@@ -85,16 +85,19 @@
 ; Looper Components
 
 (defn loop-time-updater [c prop]
-  (let [value (get (om/props c) prop)
+  (let [props (om/props c)
+        value (get props prop)
+        precision? (:app/precision-mode? props)
+        step (if precision? 0.1 1)
         {:keys [selected]} (om/get-computed c)]
     (dom/div #js {:style (css s/flex-row-center {:padding "0 5px"})}
       (dom/a #js {:href "#" :onClick (pd #(do
-                                           (om/transact! c `[(track/update-loop {~prop ~(dec value)}) :app/current-track])
+                                           (om/transact! c `[(track/update-loop {~prop ~(- value step)}) :app/current-track])
                                            (call-computed c :save-track)))}
         (icon "chevron-circle-down" s/fs-15))
-      (dom/div #js {:style (css {:padding "0 7px"})} (u/seconds->time value))
+      (dom/div #js {:style (css {:padding "0 7px"})} (u/seconds->time value (if precision? 3 0)))
       (dom/a #js {:href "#" :onClick (pd #(do
-                                           (om/transact! c `[(track/update-loop {~prop ~(inc value)}) :app/current-track])
+                                           (om/transact! c `[(track/update-loop {~prop ~(+ value step)}) :app/current-track])
                                            (call-computed c :save-track)))}
         (icon "chevron-circle-up" s/fs-15)))))
 
@@ -103,7 +106,7 @@
   (ident [this {:keys [db/id]}] [:db/id id])
 
   static om/IQuery
-  (query [this] [:db/id :loop/label :loop/start :loop/finish])
+  (query [this] [:db/id :loop/label :loop/start :loop/finish :app/precision-mode?])
 
   Object
   (render [this]

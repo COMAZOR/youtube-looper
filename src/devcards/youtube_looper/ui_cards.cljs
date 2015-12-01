@@ -97,7 +97,9 @@
   (fn []
     (dom/div nil
       (dom/button #js {:onClick #(om/transact! reconciler '[(app/change-video {:youtube/id "abc"}) :app/current-track])} "ABC")
-      (dom/button #js {:onClick #(om/transact! reconciler '[(app/change-video {:youtube/id "123"}) :app/current-track])} "123"))))
+      (dom/button #js {:onClick #(om/transact! reconciler '[(app/change-video {:youtube/id "123"}) :app/current-track])} "123")
+      (dom/button #js {:onClick #(om/transact! reconciler '[(app/set {:app/precision-mode? true}) :app/precision-mode?])} "Precision mode on")
+      (dom/button #js {:onClick #(om/transact! reconciler '[(app/set {:app/precision-mode? false}) :app/precision-mode?])} "Precision mode off"))))
 
 #_(defcard loop-page-card-local-storage
     "Display the loop manager dialog using local storage."

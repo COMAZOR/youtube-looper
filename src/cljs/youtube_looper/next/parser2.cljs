@@ -14,6 +14,9 @@
 
 ; Local Read
 
+(defn get-root [env key default]
+  (p/dbget (assoc env :db-path []) key default))
+
 (defn read-local
   [{:keys [ast query state] :as env} key _]
   (let [st @state]
@@ -26,7 +29,8 @@
       :track/loops {:value (p/parse-join-with-reader read-local env key)}
       :track/new-loop {:value (p/parse-join-with-reader read-local env key)}
       :track/new-loop2 {:value (p/parse-join-with-reader read-local env :track/new-loop)}
-      :video/current-time {:value (p/dbget (assoc env :db-path []) key 0)}
+      :video/current-time {:value (get-root env key 0)}
+      :app/precision-mode? {:value (get-root env key false)}
       
       (p/db-value env key))))
 
@@ -41,6 +45,10 @@
   [{:keys [state ref]} _ props]
   {:action (fn [] (if ref (swap! state update-in ref merge props)
                           (swap! state merge props)))})
+
+(defmethod mutate 'app/set
+  [{:keys [state]} _ props]
+  {:action (fn [] (swap! state merge props))})
 
 (defmethod mutate 'loop/set-current-video-time
   [{:keys [state ref] {:keys [current-position]} :shared} _ {:keys [at]}]
