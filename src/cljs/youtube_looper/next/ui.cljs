@@ -286,7 +286,9 @@
           (dom/button #js {:className "ytp-button youtube-looper-action-button"
                            :title     "Show Loops"
                            :style     (css s/youtube-action-button)
-                           :onClick   #(om/transact! this `[(entity/set {:app/visible? ~(not visible?)}) :app/current-track])} "AB"))
+                           :onClick   #(om/transact! this `[(entity/set {:app/visible? ~(not visible?)}) :app/current-track])}
+            (dom/img #js {:src s/player-icon
+                          :className "youtube-looper-action-icon"})))
         (if (and visible? current-track) (loop-manager current-track))))))
 
 (def loop-page (om/factory LoopPage))
