@@ -78,7 +78,6 @@
 
 (defn ^:export init []
   (track/initialize "55eGVmS7Ty7Sa4cLxwpKL235My8elBtQBOk4wx1R" "ghUQSvjYReHqwNhdOROgzI3xm0aybyarCXW30usM")
-  (println "initialized")
   (let [bus (chan (async/sliding-buffer 512) (map (partial debug-input "flux message")))
         pub (async/pub bus first)
         youtube-id (yt/current-video-id)
