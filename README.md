@@ -4,29 +4,13 @@ Google Chrome extension that provides an AB-Loop feature for Youtube videos.
 
 You can install the extension from [this page on the Chrome Web Store](https://chrome.google.com/webstore/detail/bidjeabmcpopfddfcnpniceojmkklcje).
 
-The Firefox version is currently waiting for approval at Mozilla Addons.
-
-The Safari version can be [found here](https://extensions.apple.com/details/?id=com.wilker-dev.youtube-looper-6T7U3QR5G9).
-
 ## Building it
 
-There are multiple cljsbuild builds available to run here, one for each supported
-browser, examples:
+Run the following command to start building and the REPL with Figwheel
 
 ```
-lein cljsbuild auto firefox-dev
-lein cljsbuild auto safari-dev
-lein cljsbuild auto chrome-dev
+lein run -m clojure.main scripts/figwheel.clj
 ```
-
-Scripts for release builds are also available (only working for Chrome currently):
-
-```
-lein cljsbuild once chrome-release
-```
-
-Each build outputs the compiled sources at the correct browser package, you can find
-those packages at the `browsers` folder.
 
 ## Working with the locales
 
