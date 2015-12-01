@@ -6,6 +6,7 @@
             [goog.dom :as gdom]
             [goog.style :as style]
             [goog.string :as gstr]
+            [youtube-looper.browser :refer [t]]
             [youtube-looper.util :as u]
             [youtube-looper.next.styles :as s :refer [css]]))
 
@@ -138,11 +139,11 @@
             (icon "play-circle" s/fs-23)))
         (dom/div #js {:className "youtube-looper-label"
                       :style   (css s/loop-label {:cursor "pointer"})
-                      :onClick #(when-let [label (js/prompt "New Label" (or label ""))]
+                      :onClick #(when-let [label (js/prompt (t "new_loop_label") (or label ""))]
                                  (om/transact! this `[(track/update-loop {:loop/label ~label}) :app/current-track])
                                  (call-computed this :save-track))}
           (if (or (nil? label) (gstr/isEmpty label))
-            (dom/i nil "No Label")
+            (dom/i nil (t "no_label"))
             label))
         (dom/div #js {:style (css s/flex-row-center (s/justify-content "space-between"))}
           (loop-time-updater this :loop/start)
@@ -194,9 +195,9 @@
             (dom/div nil
               (if start
                 (if offtime?
-                  "Click to reset initial time"
-                  (dom/span #js {:style (css {:color s/c-f12b24-red})} "Click to set end time"))
-                "Start new loop"))))
+                  (t "reset_loop_time")
+                  (dom/span #js {:style (css {:color s/c-f12b24-red})} (t "finish_loop")))
+                (t "start_loop")))))
         (if start
           (dom/div #js {:style (css s/flex-row-center (s/justify-content "space-between"))}
             (dom/div #js {:style (css {:padding "0 5px"})} (u/seconds->time start))

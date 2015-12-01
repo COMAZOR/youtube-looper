@@ -1,1 +1,1 @@
-module.exports = ["new_loop","new_loop_name","disable_loop","unnamed_section","set_playback_rate","input_playback_rate","invalid_number"];
+module.exports = ["new_loop_label","start_loop","reset_loop_time","finish_loop","no_label"];
