@@ -181,13 +181,13 @@
         (dom/div #js {:style (css s/flex-row-center)}
           (if start
             (if offtime?
-              (dom/a #js {:href "#" :onClick (pd #(om/transact! this '[(loop/set-current-video-time {:at :loop/start})]))}
+              (dom/a #js {:href "#" :onClick (pd #(om/transact! this '[(loop/set-current-video-time {:at :loop/start})] :app/current-track))}
                 (icon "plus-circle" s/fs-23))
               
               (dom/a #js {:href "#" :onClick (pd #(om/transact! this '[(loop/set-current-video-time {:at :loop/finish})]))}
                 (icon "pause-circle" s/fs-23)))
 
-            (dom/a #js {:href "#" :onClick (pd #(om/transact! this '[(loop/set-current-video-time {:at :loop/start})]))}
+            (dom/a #js {:href "#" :onClick (pd #(om/transact! this '[(loop/set-current-video-time {:at :loop/start}) :app/current-track]))}
               (icon "plus-circle" s/fs-23)))
 
           (dom/div #js {:className "youtube-looper-label"
@@ -205,7 +205,7 @@
             (dom/div #js {:style (css {:color   s/c-f12b24-red
                                        :padding "0 5px"})} (u/seconds->time current-time))
 
-            (dom/a #js {:href  "#" :onClick (pd #(om/transact! this '[(entity/set {:loop/start nil})]))
+            (dom/a #js {:href  "#" :onClick (pd #(om/transact! this '[(entity/set {:loop/start nil}) :app/current-track]))
                         :style (css {:paddingLeft 10})}
               (icon "trash" s/fs-18))))))))
 
@@ -249,7 +249,8 @@
   Object
   (render [this]
     (let [{:keys [track/loops track/new-loop] :as track} (om/props this)]
-      (dom/div #js {:className "youtube-looper-dialog" :style (css s/popup-container s/body-text)}
+      (dom/div #js {:className "youtube-looper-dialog"
+                    :style (css s/popup-container s/body-text (if (:loop/start new-loop) {:opacity 1}))}
         (listener {:event    "keydown"
                    :listener (fn [e]
                                (if (= (.-keyCode e) SHIFT_KEY)
