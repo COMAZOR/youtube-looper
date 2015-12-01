@@ -150,3 +150,17 @@
     (cb (->> server-response
              (rewrite)
              (tree-db)))))
+
+; Migration Store
+
+(defrecord MigrationStore [main-store secondary-store]
+  kv/KVSyncStore
+  (kv-get [_ key]
+    (or (kv/kv-get main-store key)
+        (if-let [loops (kv/kv-get secondary-store key)]
+          (-> (blank-track key)
+              (assoc :track/loops (mapv #(assoc % :db/id (random-uuid)) loops))))))
+  
+  (kv-set! [_ key value] (kv/kv-set! main-store key value)))
+
+(defn migration-store [main-store secondary-store] (MigrationStore. main-store secondary-store))

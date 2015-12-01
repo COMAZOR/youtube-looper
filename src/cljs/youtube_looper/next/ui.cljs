@@ -110,14 +110,10 @@
         step (if precision? 0.1 1)
         {:keys [selected]} (om/get-computed c)]
     (dom/div #js {:style (css s/flex-row-center {:padding "0 5px"})}
-      (dom/a #js {:href "#" :onClick (pd #(do
-                                           (om/transact! c `[(track/update-loop {~prop ~(- value step)}) :app/current-track])
-                                           (call-computed c :save-track)))}
+      (dom/a #js {:href "#" :onClick (pd #(om/transact! c `[(track/update-loop {~prop ~(- value step)}) :app/current-track]))}
         (icon "chevron-circle-down" s/fs-15))
       (dom/div #js {:style (css {:padding "0 7px"})} (u/seconds->time value (if precision? 3 0)))
-      (dom/a #js {:href "#" :onClick (pd #(do
-                                           (om/transact! c `[(track/update-loop {~prop ~(+ value step)}) :app/current-track])
-                                           (call-computed c :save-track)))}
+      (dom/a #js {:href "#" :onClick (pd #(om/transact! c `[(track/update-loop {~prop ~(+ value step)}) :app/current-track]))}
         (icon "chevron-circle-up" s/fs-15)))))
 
 (defui LoopRow
@@ -140,8 +136,7 @@
         (dom/div #js {:className "youtube-looper-label"
                       :style     (css s/loop-label {:cursor "pointer"})
                       :onClick   #(when-let [label (js/prompt (t "new_loop_label") (or label ""))]
-                                   (om/transact! this `[(track/update-loop {:loop/label ~label}) :app/current-track])
-                                   (call-computed this :save-track))}
+                                   (om/transact! this `[(track/update-loop {:loop/label ~label}) :app/current-track]))}
           (if (or (nil? label) (gstr/isEmpty label))
             (dom/i nil (t "no_label"))
             label))
@@ -266,7 +261,6 @@
                                                :on-start-new #(select-loop this nil)}))
           (->> (map #(om/computed % {:on-delete          (partial delete-loop this %)
                                      :on-select          (partial select-loop this %)
-                                     :save-track         (partial save-track this)
                                      :on-clean-selection (partial select-loop this nil)
                                      :selected           (= (get-in track [:track/selected-loop :db/id]) (:db/id %))})
                     (sort-by :loop/start loops))

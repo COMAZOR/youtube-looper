@@ -18,23 +18,29 @@
                     {:db/id (random-uuid) :loop/label "intro" :loop/start 60 :loop/finish 70}]
    :track/new-loop {:db/id (random-uuid)}})
 
-(def fake-store
+(def map-store
   (kv/map-kv-store {"123" track
                     "abc" {:youtube/id "abc"
                            :db/id (random-uuid)
                            :track/loops [{:db/id (random-uuid) :loop/label "on the other" :loop/start 2 :loop/finish 80}]
                            :track/new-loop {:db/id (random-uuid)}}}))
 
+(def old-store
+  (kv/map-kv-store {"cat" [{:loop/label "from old" :loop/start 10.321 :loop/finish 23.443}
+                           {:loop/label "other old" :loop/start 67.231 :loop/finish 98.321}]}))
+
+(def migration-store (p/migration-store map-store old-store))
+
 (def initial-state
   {:youtube/current-video "123"
    :app/visible?          true})
 
 (defonce reconciler
-  (p/reconciler {:state  initial-state
+         (p/reconciler {:state  initial-state
                  :shared {:current-position #(deref video-position)
                           :current-duration #(-> 100)
                           :bus              (async/chan (async/sliding-buffer 1024))}
-                 :send   (partial p/send fake-store)}))
+                 :send   (partial p/send migration-store)}))
 
 #_ (def reconciler-local-storage
   (om/reconciler
@@ -98,8 +104,9 @@
     (dom/div nil
       (dom/button #js {:onClick #(om/transact! reconciler '[(app/change-video {:youtube/id "abc"}) :app/current-track])} "ABC")
       (dom/button #js {:onClick #(om/transact! reconciler '[(app/change-video {:youtube/id "123"}) :app/current-track])} "123")
-      (dom/button #js {:onClick #(om/transact! reconciler '[(app/set {:app/precision-mode? true}) :app/precision-mode?])} "Precision mode on")
-      (dom/button #js {:onClick #(om/transact! reconciler '[(app/set {:app/precision-mode? false}) :app/precision-mode?])} "Precision mode off"))))
+      (dom/button #js {:onClick #(om/transact! reconciler '[(app/change-video {:youtube/id "cat"}) :app/current-track])} "cat")
+      
+      )))
 
 #_(defcard loop-page-card-local-storage
     "Display the loop manager dialog using local storage."
