@@ -43,12 +43,6 @@
      (while (not (f)) (<! (async/timeout delay)))
      (f))))
 
-(defn block-key-propagation [el]
-  (doto el
-    (wd/listen "keydown" #(.stopPropagation %))
-    (wd/listen "keyup" #(.stopPropagation %))
-    (wd/listen "keypress" #(.stopPropagation %))))
-
 (defn dialog-container []
   (or ($ ".ytp-looper-container")
       (doto (wd/create-element! "div")
@@ -56,8 +50,7 @@
         (wd/set-properties! {"data-layer" 9})
         (wd/set-style! {:z-index 20
                          :position "absolute"
-                         :bottom "132px" :right "12px"})
-        (block-key-propagation)
+                         :bottom "130px" :right "12px"})
         (wd/append-to! ($ "#movie_player")))))
 
 (def store (kv/local-storage-kv-store "youtube-looper-"))

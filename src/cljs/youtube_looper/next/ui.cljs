@@ -1,6 +1,7 @@
 (ns youtube-looper.next.ui
   (:require [om.next :as om :refer-macros [defui]]
             [om.dom :as dom]
+            [goog.events :as gevt]
             [goog.object :as gobj]
             [goog.dom :as gdom]
             [goog.style :as style]
@@ -64,6 +65,22 @@
 
 (defn portal [props & children]
   (portal-factory (assoc props :children children)))
+
+(defui Listener
+  Object
+  (componentDidMount [this]
+    (let [target (.querySelector js/document "body")
+          {:keys [event listener]} (om/props this)]
+      (gevt/listen target event listener)))
+
+  (componentWillUnmount [this]
+    (let [target (.querySelector js/document "body")
+          {:keys [event listener]} (om/props this)]
+      (gevt/unlisten target event listener)))
+
+  (render [this] (js/React.DOM.noscript)))
+
+(def listener (om/factory Listener))
 
 ; Youtube Components
 
@@ -211,6 +228,8 @@
   (js/setTimeout (fn [] (om/transact! c `[(track/save ~(clean-track (om/props c)))]))
               10))
 
+(def SHIFT_KEY 16)
+
 (defui LoopManager
   static om/IQuery
   (query [this]
@@ -227,6 +246,14 @@
   (render [this]
     (let [{:keys [track/loops track/new-loop] :as track} (om/props this)]
       (dom/div #js {:style (css s/popup-container s/body-text)}
+        (listener {:event    "keydown"
+                   :listener (fn [e]
+                               (if (= (.-keyCode e) SHIFT_KEY)
+                                 (om/transact! (om/get-reconciler this) '[(app/set {:app/precision-mode? true}) :app/precision-mode?])))})
+        (listener {:event    "keyup"
+                   :listener (fn [e]
+                               (if (= (.-keyCode e) SHIFT_KEY)
+                                 (om/transact! (om/get-reconciler this) '[(app/set {:app/precision-mode? false}) :app/precision-mode?])))})
         (apply dom/div #js {:style (css {:padding 6})}
           (new-loop-row (om/computed new-loop {:on-submit #(create-loop this %)}))
           (->> (map #(om/computed % {:on-delete          (partial delete-loop this %)
@@ -247,7 +274,7 @@
 
   Object
   (render [this]
-    (let [{:keys [app/current-track app/visible? app/new-loop] :as props} (om/props this)]
+    (let [{:keys [app/current-track app/visible?] :as props} (om/props this)]
       (dom/div nil
         (portal {:append-to ".ytp-progress-list"}
           (track-loop-overlay current-track))
