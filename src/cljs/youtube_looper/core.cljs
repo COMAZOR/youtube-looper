@@ -54,7 +54,9 @@
         (wd/set-properties! {"data-layer" 9})
         (wd/append-to! ($ "#movie_player")))))
 
-(def store (kv/local-storage-kv-store "youtube-looper-"))
+(def store
+  (p/migration-store (kv/local-storage-kv-store "youtube-looper-")
+                     (kv/local-storage-kv-store "video-loops-")))
 
 (defn read-selected-loop [state]
   (let [{:keys [app/current-track]} (p/parser {:state state} [{:app/current-track [{:track/selected-loop [:loop/start :loop/finish]}]}])]
