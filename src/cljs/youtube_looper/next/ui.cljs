@@ -5,6 +5,7 @@
             [goog.object :as gobj]
             [goog.dom :as gdom]
             [goog.style :as style]
+            [goog.string :as gstr]
             [youtube-looper.util :as u]
             [youtube-looper.next.styles :as s :refer [css]]))
 
@@ -140,9 +141,9 @@
                       :onClick #(when-let [label (js/prompt "New Label" (or label ""))]
                                  (om/transact! this `[(track/update-loop {:loop/label ~label}) :app/current-track])
                                  (call-computed this :save-track))}
-          (if label
-            label
-            (dom/i nil "No Label")))
+          (if (or (nil? label) (gstr/isEmpty label))
+            (dom/i nil "No Label")
+            label))
         (dom/div #js {:style (css s/flex-row-center (s/justify-content "space-between"))}
           (loop-time-updater this :loop/start)
           (dom/div nil "/")
