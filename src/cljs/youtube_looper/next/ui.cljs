@@ -138,10 +138,10 @@
           (dom/a #js {:href "#" :onClick (pd #(call-computed this :on-select))}
             (icon "play-circle" s/fs-23)))
         (dom/div #js {:className "youtube-looper-label"
-                      :style   (css s/loop-label {:cursor "pointer"})
-                      :onClick #(when-let [label (js/prompt (t "new_loop_label") (or label ""))]
-                                 (om/transact! this `[(track/update-loop {:loop/label ~label}) :app/current-track])
-                                 (call-computed this :save-track))}
+                      :style     (css s/loop-label {:cursor "pointer"})
+                      :onClick   #(when-let [label (js/prompt (t "new_loop_label") (or label ""))]
+                                   (om/transact! this `[(track/update-loop {:loop/label ~label}) :app/current-track])
+                                   (call-computed this :save-track))}
           (if (or (nil? label) (gstr/isEmpty label))
             (dom/i nil (t "no_label"))
             label))
@@ -183,7 +183,7 @@
             (if offtime?
               (dom/a #js {:href "#" :onClick (pd #(om/transact! this '[(loop/set-current-video-time {:at :loop/start}) () :app/current-track]))}
                 (icon "plus-circle" s/fs-23))
-              
+
               (dom/a #js {:href "#" :onClick (pd #(om/transact! this '[(loop/set-current-video-time {:at :loop/finish}) :app/current-track]))}
                 (icon "pause-circle" s/fs-23)))
 
@@ -193,7 +193,7 @@
               (icon "plus-circle" s/fs-23)))
 
           (dom/div #js {:className "youtube-looper-label"
-                        :style (css s/loop-label)}
+                        :style     (css s/loop-label)}
             (dom/div nil
               (if start
                 (if offtime?
@@ -232,7 +232,7 @@
 
 (defn save-track [c]
   (js/setTimeout (fn [] (om/transact! c `[(track/save ~(clean-track (om/props c)))]))
-              10))
+                 10))
 
 (def SHIFT_KEY 16)
 
@@ -252,7 +252,7 @@
   (render [this]
     (let [{:keys [track/loops track/new-loop] :as track} (om/props this)]
       (dom/div #js {:className "youtube-looper-dialog"
-                    :style (css s/popup-container s/body-text (if (:loop/start new-loop) {:opacity 1}))}
+                    :style     (css s/popup-container s/body-text (if (:loop/start new-loop) {:opacity 1}))}
         (listener {:event    "keydown"
                    :listener (fn [e]
                                (if (= (.-keyCode e) SHIFT_KEY)
@@ -262,8 +262,8 @@
                                (if (= (.-keyCode e) SHIFT_KEY)
                                  (om/transact! (om/get-reconciler this) '[(app/set {:app/precision-mode? false}) :app/precision-mode?])))})
         (apply dom/div #js {:style (css {:padding 6})}
-          (new-loop-row (om/computed new-loop {:on-submit #(create-loop this %)
-                                               :on-start-new #(select-loop this nil) }))
+          (new-loop-row (om/computed new-loop {:on-submit    #(create-loop this %)
+                                               :on-start-new #(select-loop this nil)}))
           (->> (map #(om/computed % {:on-delete          (partial delete-loop this %)
                                      :on-select          (partial select-loop this %)
                                      :save-track         (partial save-track this)
