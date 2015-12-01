@@ -18,7 +18,7 @@
 
 (def track-base-dimensions
   {:user-agent             (ua/getUserAgentString)
-   :youtube-looper-version "0.7.0" ; TODO: get the version dynamically
+   :youtube-looper-version "2.0.0" ; TODO: get the version dynamically
    })
 
 (defn track
