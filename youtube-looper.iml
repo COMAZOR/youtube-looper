@@ -8,12 +8,9 @@
       <sourceFolder url="file://$MODULE_DIR$/dev-resources" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/cljs-chrome" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/devcards" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/src/cljs-firefox" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/cljs" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/clj" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/resources" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/src/cljs-safari" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/src/demo" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/test/clj" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/test/cljs" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/browsers/chrome/js" />

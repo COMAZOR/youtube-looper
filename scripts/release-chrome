@@ -1,6 +1,4 @@
 #!/bin/bash
 
-rm -rf browsers/chrome/js
-lein cljsbuild once chrome-release
 cd browsers/chrome
 zip -r ../../releases/youtube-looper-chrome-$(jq -r '.version' manifest.json).zip *
