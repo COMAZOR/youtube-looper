@@ -235,6 +235,7 @@
   static om/IQuery
   (query [this]
     [:db/id
+     :app/playback-rate
      :track/duration
      {:track/new-loop (om/get-query NewLoopRow)}
      {:track/loops (om/get-query LoopRow)}
@@ -245,7 +246,7 @@
 
   Object
   (render [this]
-    (let [{:keys [track/loops track/new-loop] :as track} (om/props this)]
+    (let [{:keys [track/loops track/new-loop app/playback-rate] :as track} (om/props this)]
       (dom/div #js {:className "youtube-looper-dialog"
                     :style     (css s/popup-container s/body-text (if (:loop/start new-loop) {:opacity 1}))}
         (listener {:event    "keydown"
@@ -264,7 +265,15 @@
                                      :on-clean-selection (partial select-loop this nil)
                                      :selected           (= (get-in track [:track/selected-loop :db/id]) (:db/id %))})
                     (sort-by :loop/start loops))
-               (map loop-row)))))))
+               (map loop-row)))
+
+        (dom/div #js {:style (css s/flex-row-center (s/justify-content "flex-end") {:padding 6})}
+          (dom/div nil "Speed")
+          (dom/input #js {:type     "range" :min 0.5 :max 1.5 :step 0.01
+                          :style    (css {:margin "0 20px"})
+                          :value    playback-rate
+                          :onChange #(om/transact! (om/get-reconciler this) `[(app/set-playback-rate {:value ~(.. % -target -value)}) :app/playback-rate])})
+          (dom/div #js {:style (css {:width "3.6rem"})} (js/Math.floor (* playback-rate 100)) "%"))))))
 
 (def loop-manager (om/factory LoopManager {:keyfn :db/id}))
 
@@ -287,7 +296,7 @@
                            :title     "Show Loops"
                            :style     (css s/youtube-action-button)
                            :onClick   #(om/transact! this `[(entity/set {:app/visible? ~(not visible?)}) :app/current-track])}
-            (dom/img #js {:src s/player-icon
+            (dom/img #js {:src       s/player-icon
                           :className "youtube-looper-action-icon"})))
         (if (and visible? current-track) (loop-manager current-track))))))
 

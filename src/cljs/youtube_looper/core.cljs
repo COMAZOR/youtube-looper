@@ -88,6 +88,7 @@
                       :normalize false
                       :shared    {:current-position youtube-video-position
                                   :current-duration youtube-video-duration
+                                  :set-playback-rate #(wd/video-playback-rate! (yt/get-video) %)
                                   :bus              bus}
                       :send      (partial p/send store)
                       :logger    nil})]

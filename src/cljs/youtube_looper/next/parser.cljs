@@ -31,6 +31,7 @@
       :track/new-loop {:value (p/parse-join-with-reader read-local env key)}
       :video/current-time {:value (get-root env key 0)}
       :app/precision-mode? {:value (get-root env key false)}
+      :app/playback-rate {:value (get-root env key 1)}
 
       (p/db-value env key))))
 
@@ -50,6 +51,18 @@
   [{:keys [state]} _ props]
   {:action (fn [] (swap! state merge props))
    :value  {:keys (keys props)}})
+
+(defn call-map-fn [m k & args]
+  (when-let [f (get m k)]
+    (assert (fn? f))
+    (apply f args)))
+
+(defmethod mutate 'app/set-playback-rate
+  [{:keys [state shared]} _ {:keys [value]}]
+  {:action (fn [] (do
+                    (swap! state assoc :app/playback-rate value)
+                    (call-map-fn shared :set-playback-rate value)))
+   :value  {:keys [:app/playback-rate]}})
 
 (defmethod mutate 'loop/set-current-video-time
   [{:keys [state ref] {:keys [current-position]} :shared} _ {:keys [at]}]

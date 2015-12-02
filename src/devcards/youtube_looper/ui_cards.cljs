@@ -39,6 +39,7 @@
          (p/reconciler {:state  initial-state
                  :shared {:current-position #(deref video-position)
                           :current-duration #(-> 100)
+                          :set-playback-rate #(print "set playback rate" %)
                           :bus              (async/chan (async/sliding-buffer 1024))}
                  :send   (partial p/send migration-store)}))
 
