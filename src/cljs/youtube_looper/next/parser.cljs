@@ -133,9 +133,7 @@
 
 (defmethod remote-read :app/current-track [{:keys [store]} _ {:keys [youtube/id]}]
   {:value (or (kv/kv-get store id)
-              (let [track (blank-track id)]
-                (kv/kv-set! store id track)
-                track))})
+              (blank-track id))})
 
 (defmulti remote-mutate om/dispatch)
 
