@@ -145,8 +145,8 @@
 (defmulti remote-read om/dispatch)
 
 (defmethod remote-read :app/current-track [{:keys [store]} _ {:keys [youtube/id]}]
-  {:value (or (kv/kv-get store id)
-              (blank-track id))})
+  {:value (if id (or (kv/kv-get store id)
+                     (blank-track id)))})
 
 (defmulti remote-mutate om/dispatch)
 
@@ -171,8 +171,8 @@
     (or (kv/kv-get main-store key)
         (if-let [loops (kv/kv-get secondary-store key)]
           (-> (blank-track key)
-              (assoc :track/loops (mapv #(-> (rename-keys % {:name :loop/label
-                                                             :start :loop/start
+              (assoc :track/loops (mapv #(-> (rename-keys % {:name   :loop/label
+                                                             :start  :loop/start
                                                              :finish :loop/finish})
                                              (assoc :db/id (random-uuid))) loops))))))
 

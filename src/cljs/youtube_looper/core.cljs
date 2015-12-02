@@ -80,21 +80,20 @@
   (track/initialize "55eGVmS7Ty7Sa4cLxwpKL235My8elBtQBOk4wx1R" "ghUQSvjYReHqwNhdOROgzI3xm0aybyarCXW30usM")
   (let [bus (chan (async/sliding-buffer 512) (map (partial debug-input "flux message")))
         pub (async/pub bus first)
-        youtube-id (yt/current-video-id)
-        state (atom {:youtube/current-video youtube-id
+        state (atom {:youtube/current-video (yt/current-video-id)
                      :app/visible?          false})
         reconciler (p/reconciler
                      {:state     state
                       :normalize false
-                      :shared    {:current-position youtube-video-position
-                                  :current-duration youtube-video-duration
+                      :shared    {:current-position  youtube-video-position
+                                  :current-duration  youtube-video-duration
                                   :set-playback-rate #(wd/video-playback-rate! (yt/get-video) %)
-                                  :bus              bus}
+                                  :bus               bus}
                       :send      (partial p/send store)
                       :logger    nil})]
 
     (set! (.-recon js/window) reconciler)
-    
+
     ; watch for video page changes
     (async/pipe (yt/watch-video-load
                   (chan 1024 (comp (filter #(not= % :yt/no-video))
@@ -105,7 +104,7 @@
       (inject-font-awesome-css)
       ; wait for video duration to be available
       (<! (wait-for-presence youtube-video-duration))
-      
+
       (track/track-extension-loaded)
 
       (setup-video-time-update bus)
