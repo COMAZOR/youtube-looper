@@ -52,6 +52,6 @@
                      (when-let [s (seq xs)]
                        (if (= last-seen f)
                          (recur (rest s) last-seen)
-                         (cons f (step (rest s) f)))))
-                    xs seen)))]
+                         (cons f (step (rest s) f))))
+                    xs seen))))]
      (step coll ::unseen))))

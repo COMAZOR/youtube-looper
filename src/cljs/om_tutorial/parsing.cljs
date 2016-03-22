@@ -15,8 +15,8 @@
       (cond
         reader (reader env' key params)
         (contains? remote-read-map target) ((get remote-read-map target) env' key params)
-        :else (default-local-read env' key params)
-        ))))
+        :else (default-local-read env' key params)))))
+
 
 ;;********************************************************************************
 ;; The rest of this namespace is meant to be of abstract use. I've tried to make the code as
@@ -42,8 +42,8 @@
   "
   [reader {:keys [parser query] :as env} key descend?]
   (let [env' (cond-> (assoc env :reader reader)
-               descend? (descend key)
-               )]
+               descend? (descend key))]
+
     (parser env' query)))
 
 (defn follow-ref
@@ -51,8 +51,8 @@
   [{:keys [state]} obj-or-ref]
   (if (om/ident? obj-or-ref)
     (get-in @state obj-or-ref)
-    obj-or-ref
-    ))
+    obj-or-ref))
+
 
 (defn get-in-db-path
   "This is just like get-in; however, it walks the path and if it hits an Om ref, it will
@@ -64,8 +64,8 @@
       node
       (let [k (first path)
             v (if (om/ident? k) (get-in @state k) (follow-ref env (get node k)))]
-        (recur v (rest path))
-        ))))
+        (recur v (rest path))))))
+
 
 
 (defn dbget
@@ -77,16 +77,16 @@
      (get-in @state key dflt)
      (let [node-state (get-in-db-path env)
            value (get node-state key dflt)]
-       (follow-ref env value)
-       ))))
+       (follow-ref env value)))))
+
 
 (defn db-value
   "Exactly equivalent to {:value (dbget env key nil)}. Useful as immediate return value of read."
   [env key]
   (if-let [v (dbget env key nil)]
     {:value v}
-    nil
-    ))
+    nil))
+
 
 (defn parse-join-with-reader
   "
@@ -117,15 +117,15 @@
           to-one? (map? items)
           env' (-> env
                    (descend key)
-                   (assoc :depth (or reset-depth (inc depth)) :reader reader)
-                   )
-          ]
+                   (assoc :depth (or reset-depth (inc depth)) :reader reader))]
+
+
       (cond
         to-many? (into [] (map-indexed (fn [idx _] (parser (descend env' idx) query)) items))
         to-one? (parser env' query)
-        :else nil
-        )
-      )))
+        :else nil))))
+
+
 
 (defn ref-at-db-path
   "Returns the ref at the :db-path in the environment instead of following it to an object. Returns nil if the
@@ -140,15 +140,15 @@
           (om/ident? k) k
           (om/ident? v) v
           :else nil)
-        (recur v' (rest path))
-        ))))
+        (recur v' (rest path))))))
+
 
 (defn ui-key
   "Transform a component Om ref into the proper UI property top-level key."
   [ref]
   (let [[persistent-key id] ref]
-    [(keyword (str "ui." (namespace persistent-key)) (name persistent-key)) id]
-    ))
+    [(keyword (str "ui." (namespace persistent-key)) (name persistent-key)) id]))
+
 
 (defn ui-attribute
   "Read a UI attribute that is pretending to be on the object at the current :db-path in the parse env. This
@@ -159,8 +159,8 @@
     (let [uikey (ui-key ref)
           node (get-in @state uikey)
           value (get node key)]
-      (when value {:value value})
-      )))
+      (when value {:value value}))))
+
 
 (defn elide-empty-query
   "Helper method to prevent a remote request parse for the current key if the sub-parser response is empty.
@@ -171,8 +171,8 @@
   [target {:keys [query] :as response}]
   (if (or (nil? query) (empty? query))
     nil
-    {target response})
-  )
+    {target response}))
+
 
 (defn- is-ui-query-fragment? [kw]
   (when (keyword? kw)
@@ -218,6 +218,6 @@
       nil
       {target
        (cond-> ast
-         as-root? (assoc :query-root true)
-         )}
-      )))
+         as-root? (assoc :query-root true))})))
+
+

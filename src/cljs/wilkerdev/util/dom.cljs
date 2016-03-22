@@ -24,7 +24,7 @@
 
 ; style
 
-(defn has-class? [el name] 
+(defn has-class? [el name]
   (classes/has el name))
 
 (defn set-class! [el name]
@@ -110,9 +110,9 @@
 
 ; dom mutation
 
-(defn observe-mutation* [{:keys [callback container options]
+(defn observe-mutation* [{:keys [callback container options]}
                          :or   [container body
-                                options {}]}]
+                                options {}]]
   (let [win js/window
         klass (or (.-MutationObserver win)
                   (.-WebKitMutationObserver win)
@@ -128,9 +128,9 @@
 
 (defn observe-mutation
   ([options] (observe-mutation options (chan)))
-  ([options c]
+  ([options c
     (observe-mutation* (merge options {:callback (fn [mutations] (put! c mutations))}))
-    c))
+    c]))
 
 ; video
 

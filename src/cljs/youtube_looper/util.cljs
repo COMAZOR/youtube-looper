@@ -1,5 +1,5 @@
 (ns youtube-looper.util
-  (:require [wilkerdev.util :refer [format]]))
+  (:require [goog.string.format]))
 
 (defn seconds->time
   ([seconds] (seconds->time seconds 0))
@@ -8,8 +8,8 @@
                       (.floor js/Math))
          seconds (mod seconds 60)]
      (if (> precision 0)
-       (format (str "%02d:%0" (+ 3 precision) "." precision "f") minutes seconds)
-       (format "%02d:%02d" minutes seconds)))))
+       (goog.string/format (str "%02d:%0" (+ 3 precision) "." precision "f") minutes seconds)
+       (goog.string/format "%02d:%02d" minutes seconds)))))
 
 (defn time->seconds [time]
   (let [[_ minutes seconds] (re-find #"^(\d{1,2}):(\d{1,2}(?:\.\d+)?)$" time)]

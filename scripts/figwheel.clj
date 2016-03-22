@@ -2,7 +2,7 @@
          '[figwheel-sidecar.repl-api :as ra])
 
 (ra/start-figwheel!
-  {:figwheel-options {:server-port 3450}
+  {:figwheel-options {:server-port 3449}
    :build-ids        ["chrome" "cards"]
    :all-builds       [{:id           "chrome"
                        :source-paths ["src/cljs" "src/cljs-chrome"]

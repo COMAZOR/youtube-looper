@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Youtube Looper",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Custom loops extension for Youtube videos",
   "permissions": [],
   "default_locale": "en",

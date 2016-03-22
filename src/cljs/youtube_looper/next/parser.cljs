@@ -20,15 +20,16 @@
 
 (defn read-local
   [{:keys [ast query state] :as env} key _]
-  (let [st @state]
+  (let [st @state
+        join #(-> {:value (p/parse-join-with-reader read-local env key)})]
     (case key
       :db/id (if (om/ident? (:key ast))
                {:value (p/parse-join-with-reader read-local (assoc env :db-path []) (:key ast))}
                (p/db-value env key))
-      :app/current-track {:value (p/parse-join-with-reader read-local env key)}
+      :app/current-track (join)
       :track/duration {:value ((get-in env [:shared :current-duration]))}
-      :track/loops {:value (p/parse-join-with-reader read-local env key)}
-      :track/new-loop {:value (p/parse-join-with-reader read-local env key)}
+      :track/loops (join)
+      :track/new-loop (join)
       :video/current-time {:value (get-root env key 0)}
       :app/precision-mode? {:value (get-root env key false)}
       :app/playback-rate {:value (get-root env key 1)}

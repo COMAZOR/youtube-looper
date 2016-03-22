@@ -31,7 +31,7 @@
     <orderEntry type="library" name="Leiningen: cljsjs/react-dom:0.14.3-1" level="project" />
     <orderEntry type="library" name="Leiningen: cljsjs/react:0.14.3-0" level="project" />
     <orderEntry type="library" name="Leiningen: cljsjs/showdown:0.4.0-1" level="project" />
-    <orderEntry type="library" name="Leiningen: clojure-complete:0.2.3" level="project" />
+    <orderEntry type="library" name="Leiningen: clojure-complete:0.2.4" level="project" />
     <orderEntry type="library" name="Leiningen: clout:2.1.2" level="project" />
     <orderEntry type="library" name="Leiningen: com.cemerick/piggieback:0.2.2-SNAPSHOT" level="project" />
     <orderEntry type="library" name="Leiningen: com.cognitect/transit-clj:0.8.285" level="project" />
@@ -74,12 +74,12 @@
     <orderEntry type="library" name="Leiningen: org.clojure/tools.analyzer.jvm:0.6.9" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/tools.analyzer:0.6.7" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/tools.macro:0.1.5" level="project" />
-    <orderEntry type="library" name="Leiningen: org.clojure/tools.nrepl:0.2.10" level="project" />
+    <orderEntry type="library" name="Leiningen: org.clojure/tools.nrepl:0.2.12" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/tools.reader:0.10.0-alpha3" level="project" />
     <orderEntry type="library" name="Leiningen: org.javassist/javassist:3.18.1-GA" level="project" />
     <orderEntry type="library" name="Leiningen: org.mozilla/rhino:1.7R5" level="project" />
     <orderEntry type="library" name="Leiningen: org.msgpack/msgpack:0.6.10" level="project" />
-    <orderEntry type="library" name="Leiningen: org.omcljs/om:1.0.0-alpha24" level="project" />
+    <orderEntry type="library" name="Leiningen: org.omcljs/om:1.0.0-alpha26" level="project" />
     <orderEntry type="library" name="Leiningen: org.ow2.asm/asm-all:4.2" level="project" />
     <orderEntry type="library" name="Leiningen: org.tukaani/xz:1.5" level="project" />
     <orderEntry type="library" name="Leiningen: ring-cors:0.1.7" level="project" />
