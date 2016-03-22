@@ -8,7 +8,7 @@
   args. This is useful for applying a function that accepts keyword
   arguments to a map."
   {:arglists '([f & args])}
-  ([f m]        (apply f (apply concat m)))
+  ([f m] (apply f (apply concat m)))
   ([f a & args] (apply f a (apply concat (butlast args) (last args)))))
 
 (defn format [fmt & args]
@@ -32,6 +32,7 @@
   "Quotes regexp characters from a string, making it suitable to use as literals in Regexp"
   (.replace string (js/RegExp "[-\\^$*+?.()|[\\]{}]" "g") "\\$&"))
 
+
 (defn distinct-consecutive
   "Returns a lazy sequence of the elements of coll with consecutive duplicates removed"
   ([]
@@ -52,6 +53,6 @@
                      (when-let [s (seq xs)]
                        (if (= last-seen f)
                          (recur (rest s) last-seen)
-                         (cons f (step (rest s) f))))
-                    xs seen))))]
+                         (cons f (step (rest s) f)))))
+                   xs seen)))]
      (step coll ::unseen))))

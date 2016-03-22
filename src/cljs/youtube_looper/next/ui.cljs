@@ -147,7 +147,11 @@
 
           (dom/a #js {:href  "#" :onClick (pd #(call-computed this :on-delete))
                       :style (css {:paddingLeft 10})}
-            (icon "trash" s/fs-18)))))))
+            (icon "trash" s/fs-18))
+
+          (dom/a #js {:href  "#" :onClick (pd #(call-computed this :on-duplicate))
+                      :style (css {:paddingLeft 10})}
+            (icon "files-o" s/fs-18)))))))
 
 (def loop-row (om/factory LoopRow {:keyfn :db/id}))
 
@@ -220,6 +224,9 @@
   (let [id (-> c om/props :db/id)]
     (om/transact! c `[(track/select-loop ~loop) :app/current-track])))
 
+(defn duplicate-loop [c loop]
+  (om/transact! c `[(track/duplicate-loop ~loop) :app/current-track]))
+
 (defn clean-track [track]
   (-> track
       (select-keys [:db/id :youtube/id :track/loops :track/duration])
@@ -262,6 +269,7 @@
                                                :on-start-new #(select-loop this nil)}))
           (->> (map #(om/computed % {:on-delete          (partial delete-loop this %)
                                      :on-select          (partial select-loop this %)
+                                     :on-duplicate       (partial duplicate-loop this %)
                                      :on-clean-selection (partial select-loop this nil)
                                      :selected           (= (get-in track [:track/selected-loop :db/id]) (:db/id %))})
                     (sort-by :loop/start loops))

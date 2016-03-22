@@ -6,10 +6,11 @@
    :build-ids        ["chrome" "cards"]
    :all-builds       [{:id           "chrome"
                        :source-paths ["src/cljs" "src/cljs-chrome"]
-                       :compiler     {:output-to     "browsers/chrome/js/youtube-looper.js"
-                                      :optimizations :whitespace
-                                      :verbose       true
-                                      :pretty-print  true}}
+                       :compiler     {:output-to            "browsers/chrome/js/youtube-looper.js"
+                                      :source-map-timestamp true
+                                      :optimizations        :whitespace
+                                      :verbose              true
+                                      :pretty-print         true}}
 
                       {:id           "cards"
                        :figwheel     {:devcards true}

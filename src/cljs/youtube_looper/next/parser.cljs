@@ -95,6 +95,11 @@
   {:action (fn [] (swap! state #(add-loop % ref loop)))
    :remote (remote-save-track state)})
 
+(defmethod mutate 'track/duplicate-loop
+  [{:keys [ast state ref]} _ loop]
+  {:action (fn [] (swap! state #(add-loop % ref (assoc loop :db/id (random-uuid)))))
+   :remote (remote-save-track state)})
+
 (defmethod mutate 'track/remove-loop
   [{:keys [state ref ast]} _ {:keys [db/id] :as loop}]
   {:action (fn [] (swap! state #(-> (update-in % (conj ref :track/loops) (remove-ref loop))

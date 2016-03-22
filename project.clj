@@ -6,8 +6,8 @@
   :source-paths ["src/clj" "src/cljs" "src/devcards" "src/cljs-chrome"]
   :test-paths ["test/clj" "test/cljs"]
 
-  :dependencies [[org.clojure/clojure "1.7.0" :scope "provided"]
-                 [org.clojure/clojurescript "1.7.170" :scope "provided"]
+  :dependencies [[org.clojure/clojure "1.8.0" :scope "provided"]
+                 [org.clojure/clojurescript "1.7.228" :scope "provided"]
                  [org.clojure/core.async "0.2.374"]
                  [org.omcljs/om "1.0.0-alpha26"]
                  [me.raynes/fs "1.4.6"]
@@ -15,7 +15,7 @@
 
   :profiles {:dev {:dependencies [[figwheel "0.5.0-1"]
                                   [com.cemerick/piggieback "0.2.2-SNAPSHOT"]
-                                  [figwheel-sidecar "0.5.0-1" :scope "test"]
+                                  [figwheel-sidecar "0.5.0-2" :scope "test"]
                                   [devcards "0.2.1" :exclusions [org.omcljs/om]]]
 
                    :plugins [[lein-cljsbuild "1.1.1"]]}}

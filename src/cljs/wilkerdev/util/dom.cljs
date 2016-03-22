@@ -110,9 +110,9 @@
 
 ; dom mutation
 
-(defn observe-mutation* [{:keys [callback container options]}
-                         :or   [container body
-                                options {}]]
+(defn observe-mutation* [{:keys [callback container options]
+                          :or   {container body
+                                 options {}}}]
   (let [win js/window
         klass (or (.-MutationObserver win)
                   (.-WebKitMutationObserver win)
@@ -128,9 +128,9 @@
 
 (defn observe-mutation
   ([options] (observe-mutation options (chan)))
-  ([options c
-    (observe-mutation* (merge options {:callback (fn [mutations] (put! c mutations))}))
-    c]))
+  ([options c]
+   (observe-mutation* (merge options {:callback (fn [mutations] (put! c mutations))}))
+   c))
 
 ; video
 
