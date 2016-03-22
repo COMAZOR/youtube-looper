@@ -112,7 +112,7 @@
 
 (defn observe-mutation* [{:keys [callback container options]
                           :or   {container body
-                                 options {}}}]
+                                 options   {}}}]
   (let [win js/window
         klass (or (.-MutationObserver win)
                   (.-WebKitMutationObserver win)
@@ -120,11 +120,11 @@
                   nil)]
     (if klass
       (doto (klass. callback)
-            (.observe container (clj->js (merge {:childList     true
-                                                 :attributes    true
-                                                 :characterData true
-                                                 :subtree       false}
-                                                options)))))))
+        (.observe container (clj->js (merge {:childList     true
+                                             :attributes    true
+                                             :characterData true
+                                             :subtree       false}
+                                            options)))))))
 
 (defn observe-mutation
   ([options] (observe-mutation options (chan)))

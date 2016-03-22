@@ -238,6 +238,9 @@
 
 (def SHIFT_KEY 16)
 
+(defn set-playback-rate [comp n]
+  (om/transact! (om/get-reconciler comp) `[(app/set-playback-rate {:value ~n}) :app/playback-rate]))
+
 (defui LoopManager
   static om/IQuery
   (query [this]
@@ -277,10 +280,12 @@
 
         (dom/div #js {:style (css s/flex-row-center (s/justify-content "flex-end") {:padding 6})}
           (dom/div nil "Speed")
-          (dom/input #js {:type     "range" :min 0.5 :max 1.5 :step 0.01
-                          :style    (css {:margin "0 20px"})
-                          :value    playback-rate
-                          :onChange #(om/transact! (om/get-reconciler this) `[(app/set-playback-rate {:value ~(.. % -target -value)}) :app/playback-rate])})
+          (dom/input #js {:type          "range" :min 0.5 :max 1.5 :step 0.01
+                          :style         (css {:margin "0 20px"})
+                          :value         playback-rate
+                          :onDoubleClick #(set-playback-rate this 1)
+                          :onChange      #(set-playback-rate this (.. % -target -value))})
+
           (dom/div #js {:style (css {:width "3.6rem"})} (js/Math.floor (* playback-rate 100)) "%"))))))
 
 (def loop-manager (om/factory LoopManager {:keyfn :db/id}))
