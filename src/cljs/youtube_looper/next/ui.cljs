@@ -110,10 +110,14 @@
         step (if precision? 0.1 1)
         {:keys [selected]} (om/get-computed c)]
     (dom/div #js {:style (css s/flex-row-center {:padding "0 5px"})}
-      (dom/a #js {:href "#" :onClick (pd #(om/transact! c `[(track/update-loop {~prop ~(- value step)}) :app/current-track]))}
+      (dom/a #js {:href "#"
+                  :title "Step time down"
+                  :onClick (pd #(om/transact! c `[(track/update-loop {~prop ~(- value step)}) :app/current-track]))}
         (icon "chevron-circle-down" s/fs-15))
       (dom/div #js {:style (css {:padding "0 7px"})} (u/seconds->time value (if precision? 3 0)))
-      (dom/a #js {:href "#" :onClick (pd #(om/transact! c `[(track/update-loop {~prop ~(+ value step)}) :app/current-track]))}
+      (dom/a #js {:href "#"
+                  :title "Step time up"
+                  :onClick (pd #(om/transact! c `[(track/update-loop {~prop ~(+ value step)}) :app/current-track]))}
         (icon "chevron-circle-up" s/fs-15)))))
 
 (defui LoopRow
@@ -129,9 +133,9 @@
           {:keys [selected]} (om/get-computed this)]
       (dom/div #js {:style (css s/loop-row (if selected s/selected-loop-row))}
         (if selected
-          (dom/a #js {:href "#" :onClick (pd #(call-computed this :on-clean-selection))}
+          (dom/a #js {:href "#" :onClick (pd #(call-computed this :on-clean-selection)) :title "Pause"}
             (icon "pause-circle" s/fs-23))
-          (dom/a #js {:href "#" :onClick (pd #(call-computed this :on-select))}
+          (dom/a #js {:href "#" :onClick (pd #(call-computed this :on-select)) :title "Play"}
             (icon "play-circle" s/fs-23)))
         (dom/div #js {:className "youtube-looper-label"
                       :style     (css s/loop-label {:cursor "pointer"})
@@ -145,13 +149,15 @@
           (dom/div nil "/")
           (loop-time-updater this :loop/finish)
 
-          (dom/a #js {:href  "#" :onClick (pd #(call-computed this :on-delete))
-                      :style (css {:paddingLeft 10})}
-            (icon "trash" s/fs-18))
-
           (dom/a #js {:href  "#" :onClick (pd #(call-computed this :on-duplicate))
+                      :title "Duplicate"
                       :style (css {:paddingLeft 10})}
-            (icon "files-o" s/fs-18)))))))
+            (icon "files-o" s/fs-15))
+
+          (dom/a #js {:href  "#" :onClick (pd #(call-computed this :on-delete))
+                      :title "Delete"
+                      :style (css {:paddingLeft 10})}
+            (icon "trash" s/fs-18)))))))
 
 (def loop-row (om/factory LoopRow {:keyfn :db/id}))
 
