@@ -4,6 +4,7 @@
             [clojure.set :refer [rename-keys]]
             [om-tutorial.parsing :as p]
             [om.next :as om]
+            [om.util :refer [ident?]]
             [youtube-looper.next.ui :as ui]
             [wilkerdev.local-storage :as ls]))
 
@@ -23,7 +24,7 @@
   (let [st @state
         join #(-> {:value (p/parse-join-with-reader read-local env key)})]
     (case key
-      :db/id (if (om/ident? (:key ast))
+      :db/id (if (ident? (:key ast))
                {:value (p/parse-join-with-reader read-local (assoc env :db-path []) (:key ast))}
                (p/db-value env key))
       :app/current-track (join)

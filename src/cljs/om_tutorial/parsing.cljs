@@ -1,5 +1,6 @@
 (ns om-tutorial.parsing
-  (:require [om.next :as om]))
+  (:require [om.util :as om]
+            [clojure.walk]))
 
 (defn dbg [msg v] (println msg v) v)
 
